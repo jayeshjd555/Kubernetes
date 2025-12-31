@@ -3472,6 +3472,38 @@ spec:
         image: nginx:latest
 ```
 
+#### ReplicaSet Spec Fields Explained
+
+**apiVersion:**
+- API version for ReplicaSet
+- Required: `apps/v1`
+
+**kind:**
+- Object type
+- Required: `ReplicaSet`
+
+**metadata:**
+- Object metadata (name, namespace, labels, annotations)
+- **name:** ReplicaSet name (required)
+- **namespace:** Namespace (optional, defaults to default)
+- **labels:** Key-value pairs for organization
+- **annotations:** Additional metadata
+
+**spec:**
+- ReplicaSet specification
+- **replicas:** Desired number of pod replicas (default: 1)
+- **selector:** Label selector to identify pods
+  - **matchLabels:** Equality-based selector (key-value pairs)
+  - **matchExpressions:** Set-based selector (operators: In, NotIn, Exists, DoesNotExist)
+- **template:** Pod template (required)
+  - **metadata:** Pod metadata (labels must match selector)
+  - **spec:** Pod specification (containers, volumes, etc.)
+
+**Important Notes:**
+- Template labels **must match** selector labels
+- ReplicaSet manages pods matching the selector
+- If pods exist with matching labels, ReplicaSet adopts them
+
 #### Creating ReplicaSet
 
 **Method 1: Using YAML**
@@ -3694,6 +3726,47 @@ spec:
       maxSurge: 1
       maxUnavailable: 0
 ```
+
+#### Deployment Spec Fields Explained
+
+**apiVersion:**
+- API version for Deployment
+- Required: `apps/v1`
+
+**kind:**
+- Object type
+- Required: `Deployment`
+
+**metadata:**
+- Object metadata (name, namespace, labels, annotations)
+- **name:** Deployment name (required)
+- **namespace:** Namespace (optional, defaults to default)
+- **labels:** Key-value pairs for organization
+- **annotations:** Additional metadata
+
+**spec:**
+- Deployment specification
+- **replicas:** Desired number of pod replicas (default: 1)
+- **selector:** Label selector to identify pods
+  - **matchLabels:** Equality-based selector (key-value pairs)
+  - **matchExpressions:** Set-based selector (operators: In, NotIn, Exists, DoesNotExist)
+- **template:** Pod template (required)
+  - **metadata:** Pod metadata (labels must match selector)
+  - **spec:** Pod specification (containers, volumes, etc.)
+- **strategy:** Update strategy (optional)
+  - **type:** `RollingUpdate` (default) or `Recreate`
+  - **rollingUpdate:** Rolling update configuration
+    - **maxSurge:** Maximum number of pods that can be created above desired (default: 25%)
+    - **maxUnavailable:** Maximum number of pods that can be unavailable (default: 25%)
+- **revisionHistoryLimit:** Number of old ReplicaSets to retain (default: 10)
+- **progressDeadlineSeconds:** Maximum time to wait for Deployment to progress (default: 600s)
+- **minReadySeconds:** Minimum seconds a pod must be ready (default: 0)
+
+**Important Notes:**
+- Template labels **must match** selector labels
+- Deployment creates and manages ReplicaSets
+- Each update creates a new ReplicaSet
+- Old ReplicaSets are kept for rollback
 
 #### Creating Deployments
 
@@ -3978,6 +4051,53 @@ spec:
         requests:
           storage: 10Gi
 ```
+
+#### StatefulSet Spec Fields Explained
+
+**apiVersion:**
+- API version for StatefulSet
+- Required: `apps/v1`
+
+**kind:**
+- Object type
+- Required: `StatefulSet`
+
+**metadata:**
+- Object metadata (name, namespace, labels, annotations)
+- **name:** StatefulSet name (required)
+- **namespace:** Namespace (optional, defaults to default)
+- **labels:** Key-value pairs for organization
+- **annotations:** Additional metadata
+
+**spec:**
+- StatefulSet specification
+- **serviceName:** Name of headless service (required) - Provides stable network identity
+- **replicas:** Desired number of pod replicas (default: 1)
+- **selector:** Label selector to identify pods
+  - **matchLabels:** Equality-based selector (key-value pairs)
+  - **matchExpressions:** Set-based selector (operators: In, NotIn, Exists, DoesNotExist)
+- **template:** Pod template (required)
+  - **metadata:** Pod metadata (labels must match selector)
+  - **spec:** Pod specification (containers, volumes, etc.)
+- **volumeClaimTemplates:** Persistent volume claim templates (optional)
+  - Creates a PVC for each pod
+  - Each pod gets its own persistent volume
+  - PVC name format: `<volumeClaimTemplate-name>-<pod-name>`
+- **updateStrategy:** Update strategy (optional)
+  - **type:** `RollingUpdate` (default) or `OnDelete`
+  - **rollingUpdate:** Rolling update configuration
+    - **partition:** Pods with index >= partition are updated (default: 0)
+- **podManagementPolicy:** Pod management policy (optional)
+  - `OrderedReady` (default): Pods created/terminated in order
+  - `Parallel`: Pods created/terminated in parallel
+- **revisionHistoryLimit:** Number of old ControllerRevisions to retain (default: 10)
+
+**Important Notes:**
+- **serviceName is required** - Must reference a headless Service
+- Template labels **must match** selector labels
+- Pods get stable names: `<statefulset-name>-<ordinal>` (e.g., mysql-0, mysql-1)
+- Each pod gets its own PVC from volumeClaimTemplates
+- Pods are created/updated/deleted in order
 
 #### Creating StatefulSet
 
@@ -4367,6 +4487,50 @@ spec:
         hostPath:
           path: /var/lib/docker/containers
 ```
+
+#### DaemonSet Spec Fields Explained
+
+**apiVersion:**
+- API version for DaemonSet
+- Required: `apps/v1`
+
+**kind:**
+- Object type
+- Required: `DaemonSet`
+
+**metadata:**
+- Object metadata (name, namespace, labels, annotations)
+- **name:** DaemonSet name (required)
+- **namespace:** Namespace (optional, defaults to default)
+- **labels:** Key-value pairs for organization
+- **annotations:** Additional metadata
+
+**spec:**
+- DaemonSet specification
+- **selector:** Label selector to identify pods (required)
+  - **matchLabels:** Equality-based selector (key-value pairs)
+  - **matchExpressions:** Set-based selector (operators: In, NotIn, Exists, DoesNotExist)
+- **template:** Pod template (required)
+  - **metadata:** Pod metadata (labels must match selector)
+  - **spec:** Pod specification (containers, volumes, etc.)
+    - Can include **nodeSelector** to run on specific nodes
+    - Can include **affinity** for node affinity rules
+    - Can include **tolerations** to run on tainted nodes
+- **updateStrategy:** Update strategy (optional)
+  - **type:** `RollingUpdate` (default) or `OnDelete`
+  - **rollingUpdate:** Rolling update configuration
+    - **maxUnavailable:** Maximum number of pods unavailable during update (default: 1)
+- **revisionHistoryLimit:** Number of old ControllerRevisions to retain (default: 10)
+- **minReadySeconds:** Minimum seconds a pod must be ready (default: 0)
+
+**Important Notes:**
+- **No replicas field** - Number of pods = number of nodes (or selected nodes)
+- Template labels **must match** selector labels
+- DaemonSet ensures one pod per node (or per selected node)
+- Pods are automatically created when nodes join
+- Pods are automatically deleted when nodes are removed
+- Use **nodeSelector** or **affinity** to run on specific nodes
+- Use **tolerations** to run on tainted nodes (e.g., master nodes)
 
 #### Creating DaemonSet
 
