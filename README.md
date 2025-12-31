@@ -19,6 +19,8 @@
    - [Deployments](#deployments)
    - [StatefulSet](#statefulset)
    - [DaemonSet](#daemonset)
+   - [Jobs](#jobs)
+   - [CronJobs](#cronjobs)
 
 ---
 
@@ -4685,3 +4687,706 @@ kubectl get ds nginx-daemonset -n nginx
 8. **HostPath volumes** - Common for accessing node filesystem
 
 DaemonSets are essential for running system-level services that need to be present on every node in your cluster.
+
+---
+
+### Jobs
+
+**Jobs** create one or more Pods and ensure that a specified number of them successfully terminate. Jobs are used for batch processing, one-time tasks, and workloads that need to run to completion.
+
+#### What is a Job?
+
+A Job creates Pods that run until completion (success or failure). Unlike Deployments, Jobs are designed for:
+- **One-time tasks** - Tasks that run once and complete
+- **Batch processing** - Processing data in batches
+- **Workloads that must complete** - Tasks that need to finish successfully
+
+**Key Characteristics:**
+- **Runs to completion** - Pods run until they succeed or fail
+- **Retry on failure** - Can retry failed pods
+- **Parallel execution** - Can run multiple pods in parallel
+- **Completion tracking** - Tracks successful completions
+
+#### Job Diagram
+
+```mermaid
+graph TB
+    Job[Job<br/>completions: 3<br/>parallelism: 2]
+    
+    Job -->|Creates| Pod1[Pod 1<br/>Running]
+    Job -->|Creates| Pod2[Pod 2<br/>Running]
+    
+    Pod1 -->|Completes| Success1[Success]
+    Pod2 -->|Completes| Success2[Success]
+    
+    Job -->|Creates| Pod3[Pod 3<br/>Running]
+    Pod3 -->|Completes| Success3[Success]
+    
+    Success1 -->|All Complete| JobComplete[Job Complete<br/>3/3 Successful]
+    Success2 -->|All Complete| JobComplete
+    Success3 -->|All Complete| JobComplete
+    
+    style Job fill:#326ce5,color:#fff
+    style Pod1 fill:#f4a261,color:#000
+    style Pod2 fill:#f4a261,color:#000
+    style Pod3 fill:#f4a261,color:#000
+    style Success1 fill:#90ee90,color:#000
+    style Success2 fill:#90ee90,color:#000
+    style Success3 fill:#90ee90,color:#000
+    style JobComplete fill:#4caf50,color:#fff
+```
+
+#### Job YAML Structure
+
+```yaml
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: my-job
+  namespace: default
+spec:
+  completions: 1          # Number of successful completions needed
+  parallelism: 1         # Number of pods to run in parallel
+  backoffLimit: 6        # Number of retries before marking as failed
+  activeDeadlineSeconds: 300  # Maximum time job can run (seconds)
+  template:
+    metadata:
+      labels:
+        app: batch-task
+    spec:
+      restartPolicy: Never  # Never, OnFailure, Always
+      containers:
+      - name: task-container
+        image: busybox:latest
+        command: ["sh", "-c", "echo Hello World && sleep 10"]
+```
+
+#### Job Spec Fields Explained
+
+**completions:**
+- Number of successful completions required
+- Job completes when this many pods succeed
+- Default: 1
+
+**parallelism:**
+- Number of pods to run in parallel
+- Can be less than or equal to completions
+- Default: 1
+
+**backoffLimit:**
+- Number of retries before marking job as failed
+- Default: 6
+
+**activeDeadlineSeconds:**
+- Maximum time (seconds) the job can run
+- Job is terminated if exceeded
+- Optional
+
+**restartPolicy:**
+- **Never:** Don't restart (default for Jobs)
+- **OnFailure:** Restart only on failure
+- **Always:** Always restart (not recommended for Jobs)
+
+#### Creating Jobs
+
+**Method 1: Using YAML (Recommended)**
+
+```yaml
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: demo-job
+  namespace: nginx
+spec:
+  completions: 1
+  parallelism: 1
+  template:
+    metadata:
+      labels:
+        app: batch-task
+    spec:
+      containers:
+      - name: batch-container
+        image: busybox:latest
+        command: ["sh", "-c", "echo Hello Dosto! && sleep 10"]
+      restartPolicy: Never
+```
+
+```bash
+kubectl apply -f job.yaml
+```
+
+**Method 2: Using kubectl**
+
+```bash
+# Create job imperatively
+kubectl create job my-job --image=busybox -- echo "Hello World"
+
+# Create job with command
+kubectl create job my-job --image=busybox -- sh -c "echo Hello && sleep 10"
+```
+
+#### Managing Jobs
+
+```bash
+# List jobs
+kubectl get jobs
+kubectl get job
+
+# Get job details
+kubectl get job <job-name>
+
+# Describe job
+kubectl describe job <job-name>
+
+# View pods created by job
+kubectl get pods -l job-name=<job-name>
+
+# View job logs
+kubectl logs job/<job-name>
+
+# Delete job (pods are also deleted)
+kubectl delete job <job-name>
+
+# Delete job but keep pods
+kubectl delete job <job-name> --cascade=orphan
+```
+
+#### Job Types
+
+**1. Non-Parallel Job (completions: 1, parallelism: 1)**
+- Runs one pod until completion
+- Simplest job type
+
+```yaml
+spec:
+  completions: 1
+  parallelism: 1
+```
+
+**2. Fixed Completion Count Job (completions: N, parallelism: 1)**
+- Runs N pods sequentially
+- Each pod must complete successfully
+
+```yaml
+spec:
+  completions: 5
+  parallelism: 1
+```
+
+**3. Parallel Job with Fixed Completion (completions: N, parallelism: M)**
+- Runs M pods in parallel
+- Continues until N completions
+
+```yaml
+spec:
+  completions: 10
+  parallelism: 3
+```
+
+**4. Parallel Job with Work Queue (completions: null, parallelism: M)**
+- Runs M pods in parallel
+- Continues until all work is done
+- Pods coordinate via work queue
+
+```yaml
+spec:
+  completions: null
+  parallelism: 3
+```
+
+#### Job Status
+
+```bash
+# Check job status
+kubectl get job <job-name>
+
+# Output shows:
+# NAME      COMPLETIONS   DURATION   AGE
+# my-job    1/1           30s         5m
+
+# COMPLETIONS: Successful/Required
+# DURATION: Time taken to complete
+```
+
+**Job Conditions:**
+- **Complete:** Job completed successfully
+- **Failed:** Job failed (exceeded backoffLimit)
+
+#### Job Use Cases
+
+**1. Batch Processing**
+- Process data files
+- Generate reports
+- Data transformation
+
+**2. One-Time Tasks**
+- Database migrations
+- Data imports
+- Cleanup tasks
+
+**3. Parallel Processing**
+- Process multiple items in parallel
+- Distributed computations
+
+**4. Work Queue**
+- Process items from a queue
+- Distributed task processing
+
+#### Job Best Practices
+
+1. **Set restartPolicy to Never or OnFailure** - Jobs should complete, not restart indefinitely
+2. **Set appropriate backoffLimit** - Prevent infinite retries
+3. **Set activeDeadlineSeconds** - Prevent jobs from running too long
+4. **Use completions and parallelism** - Control job execution
+5. **Handle errors properly** - Exit with appropriate codes
+6. **Clean up completed jobs** - Delete old jobs to save resources
+
+#### Example Reference
+
+For a practical example of a Job YAML file, check out:
+
+- **[nginx/jobs.yml](./nginx/jobs.yml)** - Example Job definition
+
+This example demonstrates:
+- Job structure with completions and parallelism
+- Pod template with container specification
+- Command execution in container
+- RestartPolicy configuration
+- Basic Job pattern
+
+**To use this example:**
+```bash
+# Apply the Job
+kubectl apply -f nginx/jobs.yml
+
+# View the Job
+kubectl get job -n nginx
+
+# View pods created by Job
+kubectl get pods -n nginx -l app=batch-task
+
+# View job logs
+kubectl logs -n nginx -l app=batch-task
+
+# Check job status
+kubectl describe job demo-job -n nginx
+
+# Delete the Job
+kubectl delete job demo-job -n nginx
+```
+
+#### Key Takeaways
+
+1. **Jobs run to completion** - Pods run until they succeed or fail
+2. **Use for batch tasks** - One-time tasks, batch processing
+3. **Set restartPolicy** - Never or OnFailure (not Always)
+4. **Control parallelism** - Use parallelism to run multiple pods
+5. **Track completions** - Use completions to specify required successes
+6. **Set backoffLimit** - Prevent infinite retries
+7. **Clean up jobs** - Delete completed jobs
+
+---
+
+### CronJobs
+
+**CronJob** creates Jobs on a time-based schedule. It's like a cron job in Linux, but for Kubernetes Pods. CronJobs are used for periodic tasks, scheduled backups, and recurring batch jobs.
+
+#### What is a CronJob?
+
+A CronJob creates Jobs on a schedule defined by a cron expression. It:
+- **Runs on schedule** - Executes jobs at specified times
+- **Creates Job objects** - Each execution creates a new Job
+- **Maintains history** - Keeps record of successful and failed jobs
+- **Time-based execution** - Uses cron syntax for scheduling
+
+**Key Characteristics:**
+- **Scheduled execution** - Runs jobs on a schedule
+- **Creates Jobs** - Each run creates a new Job
+- **History management** - Maintains job history
+- **Time zones** - Can specify timezone
+
+#### CronJob Diagram
+
+```mermaid
+graph TB
+    CJ[CronJob<br/>Schedule: 0 * * * *<br/>Every Hour]
+    
+    Time1[00:00] -->|Creates| Job1[Job 1<br/>Runs Pods]
+    Time2[01:00] -->|Creates| Job2[Job 2<br/>Runs Pods]
+    Time3[02:00] -->|Creates| Job3[Job 3<br/>Runs Pods]
+    
+    Job1 -->|Completes| Success1[Success]
+    Job2 -->|Completes| Success2[Success]
+    Job3 -->|Completes| Success3[Success]
+    
+    CJ -->|Manages| Job1
+    CJ -->|Manages| Job2
+    CJ -->|Manages| Job3
+    
+    style CJ fill:#326ce5,color:#fff
+    style Job1 fill:#f4a261,color:#000
+    style Job2 fill:#f4a261,color:#000
+    style Job3 fill:#f4a261,color:#000
+    style Success1 fill:#90ee90,color:#000
+    style Success2 fill:#90ee90,color:#000
+    style Success3 fill:#90ee90,color:#000
+```
+
+#### CronJob YAML Structure
+
+```yaml
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: my-cronjob
+  namespace: default
+spec:
+  schedule: "0 * * * *"        # Cron schedule
+  timeZone: "America/New_York" # Optional timezone
+  startingDeadlineSeconds: 200 # Optional deadline
+  concurrencyPolicy: Allow      # Allow, Forbid, Replace
+  successfulJobsHistoryLimit: 3 # Keep 3 successful jobs
+  failedJobsHistoryLimit: 1     # Keep 1 failed job
+  suspend: false                # Set to true to suspend
+  jobTemplate:
+    spec:
+      completions: 1
+      parallelism: 1
+      template:
+        metadata:
+          labels:
+            app: scheduled-task
+        spec:
+          restartPolicy: OnFailure
+          containers:
+          - name: task-container
+            image: busybox:latest
+            command: ["sh", "-c", "echo Scheduled task && date"]
+```
+
+#### Cron Schedule Format
+
+**Cron Expression:**
+```
+┌───────────── minute (0 - 59)
+│ ┌───────────── hour (0 - 23)
+│ │ ┌───────────── day of month (1 - 31)
+│ │ │ ┌───────────── month (1 - 12)
+│ │ │ │ ┌───────────── day of week (0 - 6) (Sunday to Saturday)
+│ │ │ │ │
+* * * * *
+```
+
+**Common Examples:**
+
+```yaml
+# Every minute
+schedule: "* * * * *"
+
+# Every hour (at minute 0)
+schedule: "0 * * * *"
+
+# Every day at midnight
+schedule: "0 0 * * *"
+
+# Every day at 2:30 AM
+schedule: "30 2 * * *"
+
+# Every Monday at 9:00 AM
+schedule: "0 9 * * 1"
+
+# Every first day of month at midnight
+schedule: "0 0 1 * *"
+
+# Every 15 minutes
+schedule: "*/15 * * * *"
+
+# Every 5 minutes
+schedule: "*/5 * * * *"
+
+# Every weekday at 9 AM
+schedule: "0 9 * * 1-5"
+```
+
+#### CronJob Spec Fields Explained
+
+**schedule:**
+- Cron expression defining when to run
+- Required field
+- Format: `minute hour day month day-of-week`
+
+**timeZone:**
+- Timezone for the schedule
+- Optional (defaults to kube-controller-manager timezone)
+- Example: `"America/New_York"`, `"UTC"`
+
+**startingDeadlineSeconds:**
+- Deadline for starting the job
+- If missed, job is skipped
+- Optional
+
+**concurrencyPolicy:**
+- **Allow:** Allow concurrent jobs (default)
+- **Forbid:** Don't allow concurrent jobs
+- **Replace:** Replace currently running job
+
+**successfulJobsHistoryLimit:**
+- Number of successful jobs to keep
+- Default: 3
+- Set to 0 to not keep any
+
+**failedJobsHistoryLimit:**
+- Number of failed jobs to keep
+- Default: 1
+- Set to 0 to not keep any
+
+**suspend:**
+- Set to true to suspend the CronJob
+- Default: false
+- Jobs won't be created when suspended
+
+**jobTemplate:**
+- Template for creating Jobs
+- Same structure as Job spec
+
+#### Creating CronJobs
+
+**Method 1: Using YAML (Recommended)**
+
+```yaml
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: minute-backup
+  namespace: nginx
+spec:
+  schedule: "* * * * *"
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            app: minute-backup
+        spec:
+          containers:
+          - name: backup-container
+            image: busybox
+            command:
+            - sh
+            - -c
+            - >
+              echo "Backup Started" ;
+              mkdir -p /backups &&
+              mkdir -p /demo-data &&
+              cp -r /demo-data /backups &&
+              echo "Backup Completed" ;
+            volumeMounts:
+            - name: data-volume
+              mountPath: /demo-data
+            - name: backup-volume
+              mountPath: /backups
+          restartPolicy: OnFailure
+          volumes:
+          - name: data-volume
+            hostPath:
+              path: /demo-data
+              type: DirectoryOrCreate
+          - name: backup-volume
+            hostPath:
+              path: /backups
+              type: DirectoryOrCreate
+```
+
+```bash
+kubectl apply -f cronjob.yaml
+```
+
+**Method 2: Using kubectl**
+
+```bash
+# Create CronJob imperatively
+kubectl create cronjob my-cronjob --image=busybox --schedule="0 * * * *" -- echo "Hello"
+```
+
+#### Managing CronJobs
+
+```bash
+# List CronJobs
+kubectl get cronjobs
+kubectl get cj
+
+# Get CronJob details
+kubectl get cronjob <cronjob-name>
+
+# Describe CronJob
+kubectl describe cronjob <cronjob-name>
+
+# View jobs created by CronJob
+kubectl get jobs -l app=<label>
+
+# Suspend CronJob
+kubectl patch cronjob <cronjob-name> -p '{"spec":{"suspend":true}}'
+
+# Resume CronJob
+kubectl patch cronjob <cronjob-name> -p '{"spec":{"suspend":false}}'
+
+# Delete CronJob
+kubectl delete cronjob <cronjob-name>
+```
+
+#### CronJob Concurrency Policies
+
+**Allow (Default):**
+```yaml
+spec:
+  concurrencyPolicy: Allow
+```
+- Allows multiple jobs to run concurrently
+- Use when jobs are independent
+
+**Forbid:**
+```yaml
+spec:
+  concurrencyPolicy: Forbid
+```
+- Prevents new job if previous is still running
+- Use when jobs must not overlap
+
+**Replace:**
+```yaml
+spec:
+  concurrencyPolicy: Replace
+```
+- Replaces currently running job with new one
+- Use when only latest job matters
+
+#### CronJob Use Cases
+
+**1. Scheduled Backups**
+- Database backups
+- File system backups
+- Configuration backups
+
+**2. Periodic Cleanup**
+- Clean old logs
+- Remove temporary files
+- Archive old data
+
+**3. Scheduled Reports**
+- Daily reports
+- Weekly summaries
+- Monthly analytics
+
+**4. Health Checks**
+- Periodic health checks
+- System monitoring
+- Status updates
+
+**5. Data Synchronization**
+- Sync data between systems
+- Update caches
+- Refresh data
+
+#### CronJob Best Practices
+
+1. **Use appropriate schedule** - Don't schedule too frequently
+2. **Set concurrencyPolicy** - Choose based on job requirements
+3. **Set history limits** - Clean up old jobs
+4. **Handle timezones** - Specify timeZone if needed
+5. **Set startingDeadlineSeconds** - Handle missed schedules
+6. **Test schedules** - Verify cron expressions
+7. **Monitor jobs** - Check job success/failure
+8. **Use suspend** - Temporarily disable without deleting
+
+#### CronJob Status
+
+```bash
+# Check CronJob status
+kubectl get cronjob <cronjob-name>
+
+# Output shows:
+# NAME           SCHEDULE      SUSPEND   ACTIVE   LAST SCHEDULE   AGE
+# minute-backup   * * * * *     False     0        30s ago         5m
+
+# SCHEDULE: Cron expression
+# SUSPEND: Whether suspended
+# ACTIVE: Number of active jobs
+# LAST SCHEDULE: When last job was created
+```
+
+#### Example Reference
+
+For a practical example of a CronJob YAML file, check out:
+
+- **[nginx/cron-job.yaml](./nginx/cron-job.yaml)** - Example CronJob definition
+
+This example demonstrates:
+- CronJob structure with schedule
+- Job template specification
+- Container with command execution
+- Volume mounts for data and backups
+- HostPath volumes configuration
+- RestartPolicy for job containers
+- Complete backup task example
+
+**To use this example:**
+```bash
+# Apply the CronJob
+kubectl apply -f nginx/cron-job.yaml
+
+# View the CronJob
+kubectl get cronjob -n nginx
+
+# View jobs created by CronJob
+kubectl get jobs -n nginx -l app=minute-backup
+
+# View pods created by jobs
+kubectl get pods -n nginx -l app=minute-backup
+
+# View logs from latest job
+kubectl logs -n nginx -l app=minute-backup --tail=50
+
+# Suspend the CronJob
+kubectl patch cronjob minute-backup -n nginx -p '{"spec":{"suspend":true}}'
+
+# Resume the CronJob
+kubectl patch cronjob minute-backup -n nginx -p '{"spec":{"suspend":false}}'
+
+# Check CronJob status
+kubectl describe cronjob minute-backup -n nginx
+
+# Delete the CronJob
+kubectl delete cronjob minute-backup -n nginx
+```
+
+#### Key Takeaways
+
+1. **CronJobs create Jobs on schedule** - Time-based job execution
+2. **Use cron syntax** - Standard cron expression format
+3. **Each run creates a Job** - CronJob manages Job creation
+4. **Set concurrencyPolicy** - Control concurrent executions
+5. **Manage history** - Set limits for successful/failed jobs
+6. **Use suspend** - Temporarily disable without deletion
+7. **Specify timezone** - For accurate scheduling
+8. **Monitor execution** - Check job success/failure
+
+CronJobs are essential for running periodic tasks, scheduled backups, and recurring batch jobs in Kubernetes.
+
+---
+
+### Comparison: Jobs vs CronJobs
+
+| Aspect | Job | CronJob |
+|--------|-----|---------|
+| **Execution** | One-time | Scheduled (recurring) |
+| **Trigger** | Manual creation | Time-based schedule |
+| **Use Case** | Batch tasks, one-time | Periodic tasks, backups |
+| **Creates** | Pods directly | Creates Jobs |
+| **Schedule** | N/A | Cron expression |
+| **History** | Manual cleanup | Automatic history management |
+| **Concurrency** | Controlled by parallelism | Controlled by concurrencyPolicy |
+
+**When to Use:**
+- **Job:** One-time tasks, batch processing, manual execution
+- **CronJob:** Scheduled tasks, periodic backups, recurring jobs
