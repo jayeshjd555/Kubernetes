@@ -12,6 +12,11 @@
    - [Kubernetes Objects and its Management](#kubernetes-objects-and-its-management)
    - [Field Selectors](#field-selectors)
    - [Namespaces](#namespaces)
+   - [Pods](#pods)
+   - [ReplicaSet](#replicaset)
+   - [Deployments](#deployments)
+   - [StatefulSet](#statefulset)
+   - [DaemonSet](#daemonset)
 
 ---
 
@@ -1799,3 +1804,2047 @@ This example demonstrates:
 8. **Apply RBAC** - Control access per namespace
 
 Namespaces are a fundamental concept in Kubernetes that help you organize and manage resources effectively in your cluster.
+
+---
+
+### Pods
+
+**Pods** are the smallest deployable units in Kubernetes. A Pod represents a single instance of a running process in your cluster and can contain one or more containers.
+
+#### What is a Pod?
+
+A Pod is a group of one or more containers that:
+- Share the same network namespace (same IP address)
+- Share the same storage volumes
+- Are scheduled together on the same node
+- Have the same lifecycle (created, started, stopped together)
+
+**Key Characteristics:**
+- **Smallest unit:** Cannot split a Pod across nodes
+- **Ephemeral:** Pods are created and destroyed, not updated
+- **One IP per Pod:** All containers in a Pod share the same IP
+- **Localhost communication:** Containers in same Pod can communicate via localhost
+
+#### Pod Structure
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: my-pod
+  namespace: default
+  labels:
+    app: nginx
+spec:
+  containers:
+  - name: nginx
+    image: nginx:latest
+    ports:
+    - containerPort: 80
+```
+
+#### Single Container Pods
+
+Most common use case - one container per Pod:
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx-pod
+spec:
+  containers:
+  - name: nginx
+    image: nginx:latest
+```
+
+#### Multi-Container Pods
+
+Pods can contain multiple containers that work together:
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: multi-container-pod
+spec:
+  containers:
+  - name: nginx
+    image: nginx:latest
+  - name: sidecar
+    image: busybox:latest
+    command: ['sh', '-c', 'while true; do echo hello; sleep 10; done']
+```
+
+**Use Cases for Multi-Container Pods:**
+- **Sidecar pattern:** Helper container (logging, monitoring)
+- **Adapter pattern:** Transform data format
+- **Ambassador pattern:** Proxy network requests
+
+#### Pod Lifecycle
+
+**Pod Phases:**
+
+1. **Pending:** Pod accepted by cluster, but containers not created
+2. **Running:** Pod bound to node, all containers created, at least one running
+3. **Succeeded:** All containers terminated successfully
+4. **Failed:** At least one container terminated with failure
+5. **Unknown:** Pod state cannot be determined
+
+**Pod States:**
+
+```bash
+# View pod phases
+kubectl get pods
+
+# Output shows:
+# NAME        READY   STATUS    RESTARTS   AGE
+# my-pod      1/1     Running   0          5m
+```
+
+#### Creating Pods
+
+**Method 1: Using kubectl**
+
+```bash
+# Create pod from YAML
+kubectl create -f pod.yaml
+
+# Create pod imperatively
+kubectl run nginx-pod --image=nginx:latest
+
+# Create pod with namespace
+kubectl create -f pod.yaml -n my-namespace
+```
+
+**Method 2: Using YAML (Recommended)**
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx-pod
+  namespace: nginx
+spec:
+  containers:
+  - name: nginx
+    image: nginx
+    ports:
+    - containerPort: 80
+```
+
+```bash
+kubectl apply -f pod.yaml
+```
+
+**Method 3: Using kubectl run**
+
+```bash
+# Basic pod
+kubectl run my-pod --image=nginx:latest
+
+# With labels
+kubectl run my-pod --image=nginx:latest --labels="app=nginx,env=prod"
+
+# With namespace
+kubectl run my-pod --image=nginx:latest -n my-namespace
+```
+
+#### Viewing Pods
+
+```bash
+# List all pods
+kubectl get pods
+
+# List pods in namespace
+kubectl get pods -n my-namespace
+
+# List pods across all namespaces
+kubectl get pods --all-namespaces
+kubectl get pods -A
+
+# Get pod details
+kubectl get pod <pod-name>
+
+# Describe pod (detailed information)
+kubectl describe pod <pod-name>
+
+# Get pod YAML
+kubectl get pod <pod-name> -o yaml
+
+# Get pod JSON
+kubectl get pod <pod-name> -o json
+
+# Watch pods
+kubectl get pods -w
+```
+
+#### Pod Logs
+
+```bash
+# View pod logs
+kubectl logs <pod-name>
+
+# View logs from specific container (multi-container pod)
+kubectl logs <pod-name> -c <container-name>
+
+# Follow logs (like tail -f)
+kubectl logs -f <pod-name>
+
+# View logs from previous container instance (if crashed)
+kubectl logs <pod-name> --previous
+
+# View last N lines
+kubectl logs <pod-name> --tail=100
+
+# View logs since timestamp
+kubectl logs <pod-name> --since=10m
+```
+
+#### Executing Commands in Pods
+
+```bash
+# Execute command in pod
+kubectl exec <pod-name> -- <command>
+
+# Example
+kubectl exec nginx-pod -- ls /usr/share/nginx/html
+
+# Interactive shell
+kubectl exec -it <pod-name> -- /bin/bash
+
+# Execute in specific container (multi-container pod)
+kubectl exec -it <pod-name> -c <container-name> -- /bin/bash
+```
+
+#### Pod Configuration
+
+**Container Image:**
+
+```yaml
+spec:
+  containers:
+  - name: nginx
+    image: nginx:latest          # Use specific tag
+    imagePullPolicy: Always     # Always, IfNotPresent, Never
+```
+
+**Container Ports:**
+
+```yaml
+spec:
+  containers:
+  - name: nginx
+    ports:
+    - containerPort: 80
+      protocol: TCP
+      name: http
+    - containerPort: 443
+      protocol: TCP
+      name: https
+```
+
+**Environment Variables:**
+
+```yaml
+spec:
+  containers:
+  - name: nginx
+    env:
+    - name: ENV_VAR
+      value: "value"
+    - name: DB_HOST
+      valueFrom:
+        configMapKeyRef:
+          name: my-config
+          key: db-host
+    - name: SECRET_KEY
+      valueFrom:
+        secretKeyRef:
+          name: my-secret
+          key: password
+```
+
+**Resource Limits:**
+
+```yaml
+spec:
+  containers:
+  - name: nginx
+    resources:
+      requests:
+        memory: "64Mi"
+        cpu: "250m"
+      limits:
+        memory: "128Mi"
+        cpu: "500m"
+```
+
+**Volume Mounts:**
+
+```yaml
+spec:
+  containers:
+  - name: nginx
+    volumeMounts:
+    - name: config-volume
+      mountPath: /etc/nginx
+  volumes:
+  - name: config-volume
+    configMap:
+      name: nginx-config
+```
+
+#### Pod Restart Policy
+
+```yaml
+spec:
+  restartPolicy: Always    # Always, OnFailure, Never
+  containers:
+  - name: nginx
+    image: nginx:latest
+```
+
+**Restart Policies:**
+- **Always:** Always restart container (default for Pods)
+- **OnFailure:** Restart only on failure
+- **Never:** Never restart container
+
+#### Pod Health Checks
+
+**Liveness Probe:**
+
+```yaml
+spec:
+  containers:
+  - name: nginx
+    livenessProbe:
+      httpGet:
+        path: /health
+        port: 80
+      initialDelaySeconds: 30
+      periodSeconds: 10
+      timeoutSeconds: 5
+      failureThreshold: 3
+```
+
+**Readiness Probe:**
+
+```yaml
+spec:
+  containers:
+  - name: nginx
+    readinessProbe:
+      httpGet:
+        path: /ready
+        port: 80
+      initialDelaySeconds: 5
+      periodSeconds: 5
+```
+
+**Startup Probe:**
+
+```yaml
+spec:
+  containers:
+  - name: nginx
+    startupProbe:
+      httpGet:
+        path: /startup
+        port: 80
+      failureThreshold: 30
+      periodSeconds: 10
+```
+
+**Probe Types:**
+- **httpGet:** HTTP GET request
+- **tcpSocket:** TCP connection check
+- **exec:** Execute command
+
+#### Pod Status and Conditions
+
+**View Pod Status:**
+
+```bash
+# Get pod status
+kubectl get pod <pod-name> -o jsonpath='{.status.phase}'
+
+# Get pod conditions
+kubectl get pod <pod-name> -o jsonpath='{.status.conditions}'
+
+# Get pod IP
+kubectl get pod <pod-name> -o jsonpath='{.status.podIP}'
+
+# Get node name
+kubectl get pod <pod-name> -o jsonpath='{.spec.nodeName}'
+```
+
+**Pod Conditions:**
+- **PodScheduled:** Pod assigned to node
+- **Initialized:** Init containers completed
+- **ContainersReady:** All containers ready
+- **Ready:** Pod ready to serve traffic
+
+#### Pod Networking
+
+**Pod IP:**
+- Each Pod gets its own IP address
+- Containers in same Pod share the same IP
+- Pods can communicate using Pod IPs
+
+**Port Forwarding:**
+
+```bash
+# Forward local port to pod
+kubectl port-forward <pod-name> 8080:80
+
+# Access pod on localhost:8080
+curl http://localhost:8080
+```
+
+**Pod-to-Pod Communication:**
+- Pods can communicate using Pod IPs
+- Use Service for stable networking
+- Network policies control access
+
+#### Pod Storage
+
+**Ephemeral Storage:**
+- Pods have ephemeral storage
+- Data lost when Pod is deleted
+- Use volumes for persistence
+
+**Volume Types:**
+
+```yaml
+spec:
+  containers:
+  - name: nginx
+    volumeMounts:
+    - name: data
+      mountPath: /data
+  volumes:
+  - name: data
+    emptyDir: {}              # Temporary storage
+  # - name: data
+  #   persistentVolumeClaim:
+  #     claimName: my-pvc     # Persistent storage
+```
+
+#### Pod Security
+
+**Security Context:**
+
+```yaml
+spec:
+  securityContext:
+    runAsUser: 1000
+    runAsGroup: 3000
+    fsGroup: 2000
+  containers:
+  - name: nginx
+    securityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+        - ALL
+        add:
+        - NET_BIND_SERVICE
+      readOnlyRootFilesystem: true
+```
+
+**Service Account:**
+
+```yaml
+spec:
+  serviceAccountName: my-service-account
+  containers:
+  - name: nginx
+    image: nginx:latest
+```
+
+#### Pod Scheduling
+
+**Node Selection:**
+
+```yaml
+spec:
+  nodeSelector:
+    disktype: ssd
+    zone: us-east-1a
+```
+
+**Node Affinity:**
+
+```yaml
+spec:
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: zone
+            operator: In
+            values:
+            - us-east-1a
+```
+
+**Pod Affinity:**
+
+```yaml
+spec:
+  affinity:
+    podAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+      - labelSelector:
+          matchExpressions:
+          - key: app
+            operator: In
+            values:
+            - nginx
+        topologyKey: kubernetes.io/hostname
+```
+
+**Taints and Tolerations:**
+
+```yaml
+spec:
+  tolerations:
+  - key: "key1"
+    operator: "Equal"
+    value: "value1"
+    effect: "NoSchedule"
+```
+
+#### Init Containers
+
+Init containers run before the main containers:
+
+```yaml
+spec:
+  initContainers:
+  - name: init-db
+    image: busybox
+    command: ['sh', '-c', 'until nslookup db-service; do echo waiting; sleep 2; done']
+  containers:
+  - name: nginx
+    image: nginx:latest
+```
+
+**Use Cases:**
+- Wait for dependencies
+- Initialize data
+- Run setup scripts
+
+#### Pod Deletion
+
+```bash
+# Delete pod
+kubectl delete pod <pod-name>
+
+# Delete pod by file
+kubectl delete -f pod.yaml
+
+# Force delete (immediate)
+kubectl delete pod <pod-name> --force --grace-period=0
+
+# Delete all pods in namespace
+kubectl delete pods --all -n my-namespace
+```
+
+**Graceful Termination:**
+- Pod receives SIGTERM signal
+- Grace period (default 30 seconds)
+- Then SIGKILL if not terminated
+
+#### Pod Best Practices
+
+**1. Don't Create Pods Directly**
+- Use Deployments, StatefulSets, or DaemonSets
+- Pods are ephemeral and not self-healing
+
+**2. Use Specific Image Tags**
+```yaml
+# ✅ Good
+image: nginx:1.21.6
+
+# ⚠️ Avoid
+image: nginx:latest
+```
+
+**3. Set Resource Limits**
+```yaml
+resources:
+  requests:
+    memory: "64Mi"
+    cpu: "250m"
+  limits:
+    memory: "128Mi"
+    cpu: "500m"
+```
+
+**4. Use Health Checks**
+```yaml
+livenessProbe:
+  httpGet:
+    path: /health
+    port: 80
+readinessProbe:
+  httpGet:
+    path: /ready
+    port: 80
+```
+
+**5. Use Labels**
+```yaml
+metadata:
+  labels:
+    app: nginx
+    env: production
+    version: v1.0
+```
+
+**6. Use Namespaces**
+```yaml
+metadata:
+  namespace: production
+```
+
+**7. Set Security Context**
+```yaml
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+```
+
+#### Common Pod Issues and Troubleshooting
+
+**Pod Pending:**
+```bash
+# Check why pod is pending
+kubectl describe pod <pod-name>
+
+# Common causes:
+# - Insufficient resources
+# - Node selector/affinity not matching
+# - Taints without tolerations
+```
+
+**Pod CrashLoopBackOff:**
+```bash
+# Check pod logs
+kubectl logs <pod-name>
+
+# Check previous container logs
+kubectl logs <pod-name> --previous
+
+# Describe pod for events
+kubectl describe pod <pod-name>
+```
+
+**Pod Not Ready:**
+```bash
+# Check readiness probe
+kubectl describe pod <pod-name>
+
+# Check container status
+kubectl get pod <pod-name> -o jsonpath='{.status.containerStatuses}'
+```
+
+**Image Pull Errors:**
+```bash
+# Check image pull policy
+kubectl get pod <pod-name> -o jsonpath='{.spec.containers[0].imagePullPolicy}'
+
+# Common issues:
+# - Image doesn't exist
+# - Image pull secrets missing
+# - Network issues
+```
+
+#### Advanced Pod Features
+
+**Pod Disruption Budget:**
+
+```yaml
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: my-pdb
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: nginx
+```
+
+**Pod Priority:**
+
+```yaml
+apiVersion: v1
+kind: PriorityClass
+metadata:
+  name: high-priority
+value: 1000
+---
+spec:
+  priorityClassName: high-priority
+```
+
+**Pod Preset (Deprecated):**
+- Pod Presets are deprecated
+- Use Init Containers or Admission Controllers instead
+
+#### Pod Commands Summary
+
+```bash
+# Create
+kubectl create -f pod.yaml
+kubectl run <name> --image=<image>
+
+# Get
+kubectl get pods
+kubectl get pod <name>
+kubectl describe pod <name>
+
+# Logs
+kubectl logs <pod-name>
+kubectl logs -f <pod-name>
+
+# Exec
+kubectl exec -it <pod-name> -- /bin/bash
+
+# Port forward
+kubectl port-forward <pod-name> 8080:80
+
+# Delete
+kubectl delete pod <name>
+kubectl delete -f pod.yaml
+
+# Edit
+kubectl edit pod <name>
+```
+
+#### Example Reference
+
+For a practical example of a Pod YAML file, check out:
+
+- **[nginx/pod.yml](./nginx/pod.yml)** - Example Pod definition for nginx
+
+This example demonstrates:
+- Basic Pod structure with metadata
+- Container specification with image
+- Port configuration
+- Namespace assignment
+- Simple single-container Pod pattern
+
+**To use this example:**
+```bash
+# Apply the pod
+kubectl apply -f nginx/pod.yml
+
+# View the pod
+kubectl get pods -n nginx
+
+# Check pod status
+kubectl describe pod nginx-pod -n nginx
+
+# View logs
+kubectl logs nginx-pod -n nginx
+
+# Access pod
+kubectl exec -it nginx-pod -n nginx -- /bin/bash
+```
+
+#### Key Takeaways
+
+1. **Pods are the smallest deployable unit** - Cannot split across nodes
+2. **Pods are ephemeral** - Created and destroyed, not updated
+3. **Containers in Pod share network and storage** - Same IP, shared volumes
+4. **Don't create Pods directly** - Use Deployments, StatefulSets, or DaemonSets
+5. **Set resource limits** - Prevent resource exhaustion
+6. **Use health checks** - Liveness and readiness probes
+7. **Pods get their own IP** - All containers in Pod share the IP
+8. **Use labels** - For organization and selection
+9. **Pods are not self-healing** - Use controllers for reliability
+10. **One container per Pod is common** - Multi-container Pods for specific use cases
+
+Pods are the fundamental building blocks of Kubernetes applications. Understanding Pods is essential for working with Kubernetes effectively.
+
+---
+
+### ReplicaSet
+
+**ReplicaSet** ensures that a specified number of pod replicas are running at any given time. It's a lower-level concept that is typically managed by Deployments.
+
+#### What is a ReplicaSet?
+
+A ReplicaSet is a Kubernetes object that:
+- Maintains a stable set of pod replicas
+- Ensures desired number of pods are running
+- Replaces pods that fail or are deleted
+- Uses label selectors to identify pods
+
+**Key Characteristics:**
+- **Replica Management:** Maintains desired number of replicas
+- **Self-Healing:** Automatically replaces failed pods
+- **Label-Based:** Uses label selectors to manage pods
+- **Lower-Level:** Usually managed by Deployments
+
+#### ReplicaSet Diagram
+
+```mermaid
+graph TB
+    RS[ReplicaSet<br/>Desired: 3 Replicas]
+    
+    RS -->|Manages| Pod1[Pod 1<br/>app=nginx]
+    RS -->|Manages| Pod2[Pod 2<br/>app=nginx]
+    RS -->|Manages| Pod3[Pod 3<br/>app=nginx]
+    
+    Pod1 -.->|Fails| RS
+    RS -->|Creates| Pod4[Pod 4<br/>app=nginx<br/>Replacement]
+    
+    style RS fill:#326ce5,color:#fff
+    style Pod1 fill:#f4a261,color:#000
+    style Pod2 fill:#f4a261,color:#000
+    style Pod3 fill:#f4a261,color:#000
+    style Pod4 fill:#90ee90,color:#000
+```
+
+#### ReplicaSet Structure
+
+```yaml
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+  name: my-replicaset
+spec:
+  replicas: 3                    # Desired number of replicas
+  selector:                       # Label selector
+    matchLabels:
+      app: nginx
+  template:                       # Pod template
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:latest
+```
+
+#### Creating ReplicaSet
+
+**Method 1: Using YAML**
+
+```yaml
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+  name: nginx-replicaset
+  namespace: nginx
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx
+```
+
+```bash
+kubectl apply -f replicaset.yaml
+```
+
+**Method 2: Using kubectl**
+
+```bash
+# Create ReplicaSet imperatively
+kubectl create replicaset nginx-rs --image=nginx:latest --replicas=3
+```
+
+#### Managing ReplicaSet
+
+```bash
+# List ReplicaSets
+kubectl get replicasets
+kubectl get rs
+
+# Get ReplicaSet details
+kubectl get rs <replicaset-name>
+
+# Describe ReplicaSet
+kubectl describe rs <replicaset-name>
+
+# Scale ReplicaSet
+kubectl scale rs <replicaset-name> --replicas=5
+
+# Delete ReplicaSet (pods are also deleted)
+kubectl delete rs <replicaset-name>
+
+# Delete ReplicaSet but keep pods
+kubectl delete rs <replicaset-name> --cascade=orphan
+```
+
+#### How ReplicaSet Works
+
+1. **ReplicaSet watches for pods** matching its selector
+2. **If pods < desired:** Creates new pods
+3. **If pods > desired:** Deletes excess pods
+4. **If pod fails:** ReplicaSet creates replacement
+5. **Continuous reconciliation:** Maintains desired state
+
+#### ReplicaSet Selector
+
+**Label Selector:**
+```yaml
+selector:
+  matchLabels:
+    app: nginx
+    env: production
+```
+
+**Match Expressions:**
+```yaml
+selector:
+  matchExpressions:
+  - key: app
+    operator: In
+    values:
+    - nginx
+    - apache
+```
+
+#### ReplicaSet vs Manual Pod Management
+
+**Without ReplicaSet:**
+- Pod fails → Manual intervention needed
+- Need to manually create replacement
+- No automatic scaling
+
+**With ReplicaSet:**
+- Pod fails → Automatically replaced
+- Maintains desired count
+- Self-healing
+
+#### ReplicaSet Best Practices
+
+1. **Don't create ReplicaSets directly** - Use Deployments instead
+2. **Match labels correctly** - Template labels must match selector
+3. **Use meaningful labels** - For better organization
+4. **Set appropriate replicas** - Based on workload requirements
+
+#### Example Reference
+
+For a practical example of a ReplicaSet YAML file, check out:
+
+- **[nginx/replicaset.yml](./nginx/replicaset.yml)** - Example ReplicaSet definition
+
+This example demonstrates:
+- ReplicaSet structure with replicas
+- Label selector configuration
+- Pod template definition
+- Basic ReplicaSet pattern
+
+**To use this example:**
+```bash
+# Apply the ReplicaSet
+kubectl apply -f nginx/replicaset.yml
+
+# View the ReplicaSet
+kubectl get rs -n nginx
+
+# View pods created by ReplicaSet
+kubectl get pods -n nginx -l app=nginx
+
+# Scale the ReplicaSet
+kubectl scale rs nginx-replicaset --replicas=5 -n nginx
+```
+
+#### Key Takeaways
+
+1. **ReplicaSet maintains pod replicas** - Ensures desired count
+2. **Self-healing** - Automatically replaces failed pods
+3. **Label-based selection** - Uses selectors to identify pods
+4. **Usually managed by Deployments** - Don't create directly
+5. **Template must match selector** - Labels in template must match selector
+
+---
+
+### Deployments
+
+**Deployment** is a higher-level concept that manages ReplicaSets and provides declarative updates for Pods. It's the recommended way to manage stateless applications in Kubernetes.
+
+#### What is a Deployment?
+
+A Deployment provides:
+- **Declarative updates** for Pods and ReplicaSets
+- **Rolling updates** and rollbacks
+- **Replica management** (via ReplicaSet)
+- **Self-healing** capabilities
+
+**Key Characteristics:**
+- **Manages ReplicaSets:** Creates and manages ReplicaSets
+- **Rolling Updates:** Updates pods with zero downtime
+- **Rollback:** Can rollback to previous versions
+- **History:** Maintains revision history
+- **Recommended:** Preferred way to manage stateless apps
+
+#### Deployment Diagram
+
+```mermaid
+graph TB
+    Dep[Deployment<br/>nginx:1.20<br/>Replicas: 3]
+    
+    Dep -->|Manages| RS1[ReplicaSet v1<br/>nginx:1.20<br/>3 Pods]
+    Dep -->|Updates to| RS2[ReplicaSet v2<br/>nginx:1.21<br/>3 Pods]
+    
+    RS1 -->|Creates| Pod1[Pod 1]
+    RS1 -->|Creates| Pod2[Pod 2]
+    RS1 -->|Creates| Pod3[Pod 3]
+    
+    RS2 -->|Creates| Pod4[Pod 4]
+    RS2 -->|Creates| Pod5[Pod 5]
+    RS2 -->|Creates| Pod6[Pod 6]
+    
+    Dep -.->|Rolling Update| RS1
+    Dep -.->|Rollback| RS1
+    
+    style Dep fill:#326ce5,color:#fff
+    style RS1 fill:#4fc3f7,color:#000
+    style RS2 fill:#90caf9,color:#000
+    style Pod1 fill:#f4a261,color:#000
+    style Pod2 fill:#f4a261,color:#000
+    style Pod3 fill:#f4a261,color:#000
+    style Pod4 fill:#90ee90,color:#000
+    style Pod5 fill:#90ee90,color:#000
+    style Pod6 fill:#90ee90,color:#000
+```
+
+#### Deployment Structure
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deployment
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.21
+        ports:
+        - containerPort: 80
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+```
+
+#### Creating Deployments
+
+**Method 1: Using YAML (Recommended)**
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deployment
+  namespace: nginx
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx
+```
+
+```bash
+kubectl apply -f deployment.yaml
+```
+
+**Method 2: Using kubectl**
+
+```bash
+# Create deployment
+kubectl create deployment nginx --image=nginx:latest
+
+# Create with replicas
+kubectl create deployment nginx --image=nginx:latest --replicas=3
+```
+
+#### Managing Deployments
+
+```bash
+# List deployments
+kubectl get deployments
+kubectl get deploy
+
+# Get deployment details
+kubectl get deployment <deployment-name>
+
+# Describe deployment
+kubectl describe deployment <deployment-name>
+
+# Scale deployment
+kubectl scale deployment <deployment-name> --replicas=5
+
+# Update deployment (change image)
+kubectl set image deployment/<deployment-name> nginx=nginx:1.21
+
+# Rollout status
+kubectl rollout status deployment/<deployment-name>
+
+# Rollout history
+kubectl rollout history deployment/<deployment-name>
+
+# Rollback to previous version
+kubectl rollout undo deployment/<deployment-name>
+
+# Rollback to specific revision
+kubectl rollout undo deployment/<deployment-name> --to-revision=2
+
+# Pause rollout
+kubectl rollout pause deployment/<deployment-name>
+
+# Resume rollout
+kubectl rollout resume deployment/<deployment-name>
+
+# Delete deployment
+kubectl delete deployment <deployment-name>
+```
+
+#### Deployment Update Strategies
+
+**Rolling Update (Default):**
+
+```yaml
+spec:
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1           # Can have 1 extra pod during update
+      maxUnavailable: 0    # No pods unavailable during update
+```
+
+**Recreate:**
+
+```yaml
+spec:
+  strategy:
+    type: Recreate         # Terminates old pods before creating new ones
+```
+
+#### Rolling Update Process
+
+```
+Current State: 3 pods running nginx:1.20
+    ↓
+Update to nginx:1.21
+    ↓
+1. Create new ReplicaSet with nginx:1.21
+2. Scale up new ReplicaSet (1 pod)
+3. Scale down old ReplicaSet (1 pod)
+4. Continue until all pods updated
+    ↓
+Final State: 3 pods running nginx:1.21
+```
+
+#### Deployment Rollback
+
+```bash
+# View rollout history
+kubectl rollout history deployment/nginx-deployment
+
+# Rollback to previous version
+kubectl rollout undo deployment/nginx-deployment
+
+# Rollback to specific revision
+kubectl rollout undo deployment/nginx-deployment --to-revision=2
+
+# View specific revision
+kubectl rollout history deployment/nginx-deployment --revision=2
+```
+
+#### Deployment Status
+
+```bash
+# Check deployment status
+kubectl get deployment <deployment-name>
+
+# Output shows:
+# NAME               READY   UP-TO-DATE   AVAILABLE   AGE
+# nginx-deployment   3/3     3            3           5m
+
+# READY: Current/Desired replicas
+# UP-TO-DATE: Replicas updated to latest
+# AVAILABLE: Replicas available for traffic
+```
+
+#### Deployment Conditions
+
+Deployments have conditions:
+- **Available:** Deployment has minimum availability
+- **Progressing:** Deployment is progressing
+- **ReplicaFailure:** ReplicaSet creation failed
+
+#### Deployment Best Practices
+
+1. **Use Deployments for stateless apps** - Not for stateful applications
+2. **Set resource limits** - In pod template
+3. **Use health checks** - Liveness and readiness probes
+4. **Use specific image tags** - Not `latest`
+5. **Set update strategy** - RollingUpdate or Recreate
+6. **Use labels consistently** - For selection and organization
+7. **Monitor rollout status** - Check during updates
+
+#### Example Reference
+
+For a practical example of a Deployment YAML file, check out:
+
+- **[nginx/deployment.yml](./nginx/deployment.yml)** - Example Deployment definition
+
+This example demonstrates:
+- Deployment structure with replicas
+- Label selector configuration
+- Pod template definition
+- Basic Deployment pattern
+
+**To use this example:**
+```bash
+# Apply the Deployment
+kubectl apply -f nginx/deployment.yml
+
+# View the Deployment
+kubectl get deployment -n nginx
+
+# View pods created by Deployment
+kubectl get pods -n nginx -l app=nginx
+
+# Scale the Deployment
+kubectl scale deployment nginx-deployment --replicas=5 -n nginx
+
+# Update the image
+kubectl set image deployment/nginx-deployment nginx=nginx:1.21 -n nginx
+
+# Check rollout status
+kubectl rollout status deployment/nginx-deployment -n nginx
+```
+
+#### Key Takeaways
+
+1. **Deployments manage ReplicaSets** - Higher-level abstraction
+2. **Rolling updates** - Zero-downtime updates
+3. **Rollback capability** - Can revert to previous versions
+4. **Recommended for stateless apps** - Standard way to deploy
+5. **Self-healing** - Automatically replaces failed pods
+6. **Revision history** - Tracks changes for rollback
+
+---
+
+### StatefulSet
+
+**StatefulSet** manages stateful applications and provides guarantees about the ordering and uniqueness of Pods. Unlike Deployments, StatefulSets maintain a sticky identity for each Pod.
+
+#### What is a StatefulSet?
+
+A StatefulSet provides:
+- **Stable network identity** - Each pod gets stable hostname
+- **Stable storage** - Each pod gets persistent storage
+- **Ordered deployment** - Pods created in order
+- **Ordered scaling** - Pods scaled up/down in order
+- **Ordered updates** - Pods updated in reverse order
+
+**Key Characteristics:**
+- **Stable Identity:** Pod name and hostname don't change
+- **Persistent Storage:** Each pod gets its own volume
+- **Ordered Operations:** Deploy, scale, update in order
+- **Stateful Apps:** Designed for databases, queues, etc.
+
+#### StatefulSet Diagram
+
+```mermaid
+graph TB
+    SS[StatefulSet<br/>mysql<br/>Replicas: 3]
+    
+    SS -->|Creates in Order| Pod0[mysql-0<br/>Stable Identity<br/>Persistent Storage]
+    SS -->|Then| Pod1[mysql-1<br/>Stable Identity<br/>Persistent Storage]
+    SS -->|Then| Pod2[mysql-2<br/>Stable Identity<br/>Persistent Storage]
+    
+    Pod0 -->|Knows| Pod1
+    Pod1 -->|Knows| Pod2
+    
+    SS -.->|Scales Down| Pod2
+    SS -.->|Then| Pod1
+    SS -.->|Then| Pod0
+    
+    style SS fill:#326ce5,color:#fff
+    style Pod0 fill:#f4a261,color:#000
+    style Pod1 fill:#f4a261,color:#000
+    style Pod2 fill:#f4a261,color:#000
+```
+
+#### StatefulSet Structure
+
+```yaml
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: mysql
+spec:
+  serviceName: mysql-headless    # Headless service name
+  replicas: 3
+  selector:
+    matchLabels:
+      app: mysql
+  template:
+    metadata:
+      labels:
+        app: mysql
+    spec:
+      containers:
+      - name: mysql
+        image: mysql:8.0
+        volumeMounts:
+        - name: data
+          mountPath: /var/lib/mysql
+  volumeClaimTemplates:          # Persistent volume for each pod
+  - metadata:
+      name: data
+    spec:
+      accessModes: ["ReadWriteOnce"]
+      resources:
+        requests:
+          storage: 10Gi
+```
+
+#### Creating StatefulSet
+
+```yaml
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: mysql
+spec:
+  serviceName: mysql
+  replicas: 3
+  selector:
+    matchLabels:
+      app: mysql
+  template:
+    metadata:
+      labels:
+        app: mysql
+    spec:
+      containers:
+      - name: mysql
+        image: mysql:8.0
+        env:
+        - name: MYSQL_ROOT_PASSWORD
+          value: "password"
+        volumeMounts:
+        - name: data
+          mountPath: /var/lib/mysql
+  volumeClaimTemplates:
+  - metadata:
+      name: data
+    spec:
+      accessModes: ["ReadWriteOnce"]
+      resources:
+        requests:
+          storage: 10Gi
+```
+
+#### Managing StatefulSet
+
+```bash
+# List StatefulSets
+kubectl get statefulsets
+kubectl get sts
+
+# Get StatefulSet details
+kubectl get sts <statefulset-name>
+
+# Describe StatefulSet
+kubectl describe sts <statefulset-name>
+
+# Scale StatefulSet
+kubectl scale sts <statefulset-name> --replicas=5
+
+# Update StatefulSet
+kubectl set image sts/<statefulset-name> mysql=mysql:8.0.28
+
+# Delete StatefulSet
+kubectl delete sts <statefulset-name>
+
+# Delete StatefulSet but keep pods
+kubectl delete sts <statefulset-name> --cascade=orphan
+```
+
+#### StatefulSet Pod Identity
+
+**Stable Network Identity:**
+
+```bash
+# Pods get stable names
+mysql-0
+mysql-1
+mysql-2
+
+# Stable hostname
+mysql-0.mysql.default.svc.cluster.local
+mysql-1.mysql.default.svc.cluster.local
+mysql-2.mysql.default.svc.cluster.local
+```
+
+**Stable Storage:**
+
+```bash
+# Each pod gets its own PVC
+data-mysql-0
+data-mysql-1
+data-mysql-2
+```
+
+#### StatefulSet Ordering
+
+**Deployment Order:**
+1. Create mysql-0, wait for Ready
+2. Create mysql-1, wait for Ready
+3. Create mysql-2, wait for Ready
+
+**Scaling Down Order:**
+1. Terminate mysql-2
+2. Terminate mysql-1
+3. Terminate mysql-0
+
+**Scaling Up Order:**
+1. Create mysql-3
+2. Create mysql-4
+3. etc.
+
+#### Headless Service
+
+StatefulSets require a Headless Service:
+
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql
+spec:
+  clusterIP: None              # Headless service
+  selector:
+    app: mysql
+  ports:
+  - port: 3306
+```
+
+**Why Headless Service?**
+- Provides stable network identity
+- Each pod gets DNS entry
+- Enables direct pod-to-pod communication
+
+#### StatefulSet Update Strategies
+
+**Rolling Update (Default):**
+
+```yaml
+spec:
+  updateStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      partition: 2    # Update pods with index >= 2
+```
+
+**OnDelete:**
+
+```yaml
+spec:
+  updateStrategy:
+    type: OnDelete    # Update only when pod is deleted
+```
+
+#### StatefulSet Use Cases
+
+**Databases:**
+- MySQL, PostgreSQL, MongoDB
+- Need stable identity and storage
+- Ordered operations
+
+**Message Queues:**
+- RabbitMQ, Kafka
+- Need stable identity
+- Ordered scaling
+
+**Distributed Systems:**
+- Elasticsearch, Cassandra
+- Need stable network identity
+- Ordered operations
+
+#### StatefulSet Best Practices
+
+1. **Use for stateful applications** - Databases, queues, etc.
+2. **Create Headless Service first** - Required for StatefulSet
+3. **Use volumeClaimTemplates** - For persistent storage
+4. **Plan scaling carefully** - Ordered operations take time
+5. **Use init containers** - For initialization logic
+6. **Set resource limits** - In pod template
+7. **Use health checks** - Liveness and readiness probes
+
+#### Key Takeaways
+
+1. **StatefulSets for stateful apps** - Databases, queues, etc.
+2. **Stable identity** - Pod names and hostnames don't change
+3. **Persistent storage** - Each pod gets its own volume
+4. **Ordered operations** - Deploy, scale, update in order
+5. **Requires Headless Service** - For stable network identity
+6. **Slower than Deployments** - Due to ordering requirements
+
+---
+
+### Comparison: ReplicaSet vs Deployment vs StatefulSet
+
+#### Quick Comparison Table
+
+| Feature | ReplicaSet | Deployment | StatefulSet |
+|---------|-----------|------------|-------------|
+| **Purpose** | Maintain pod replicas | Manage stateless apps | Manage stateful apps |
+| **Updates** | Manual | Rolling updates | Ordered updates |
+| **Rollback** | ❌ No | ✅ Yes | ✅ Yes |
+| **Pod Identity** | Random | Random | Stable |
+| **Storage** | Ephemeral | Ephemeral | Persistent |
+| **Ordering** | ❌ No | ❌ No | ✅ Yes |
+| **Use Case** | Lower-level | Stateless apps | Stateful apps |
+| **Service** | Regular/Headless | Regular | Headless required |
+| **Scaling** | Instant | Instant | Ordered |
+| **Naming** | Random | Random | Sequential (app-0, app-1) |
+
+#### Detailed Differences
+
+**1. Purpose and Abstraction Level**
+
+- **ReplicaSet:** Low-level, maintains pod count
+- **Deployment:** High-level, manages ReplicaSets with updates
+- **StatefulSet:** High-level, manages stateful applications
+
+**2. Pod Identity**
+
+- **ReplicaSet:** Random pod names (e.g., `nginx-abc123`)
+- **Deployment:** Random pod names (e.g., `nginx-deployment-abc123`)
+- **StatefulSet:** Stable, sequential names (e.g., `mysql-0`, `mysql-1`)
+
+**3. Storage**
+
+- **ReplicaSet:** Ephemeral storage only
+- **Deployment:** Ephemeral storage only
+- **StatefulSet:** Persistent storage per pod (via volumeClaimTemplates)
+
+**4. Updates**
+
+- **ReplicaSet:** Manual pod replacement
+- **Deployment:** Automatic rolling updates
+- **StatefulSet:** Ordered rolling updates
+
+**5. Rollback**
+
+- **ReplicaSet:** ❌ No rollback capability
+- **Deployment:** ✅ Rollback to previous revisions
+- **StatefulSet:** ✅ Rollback capability
+
+**6. Scaling**
+
+- **ReplicaSet:** Instant, no ordering
+- **Deployment:** Instant, no ordering
+- **StatefulSet:** Ordered (one at a time)
+
+**7. Network Identity**
+
+- **ReplicaSet:** Random IP, no stable DNS
+- **Deployment:** Random IP, no stable DNS
+- **StatefulSet:** Stable hostname, stable DNS
+
+**8. Use Cases**
+
+- **ReplicaSet:** Lower-level pod management (usually via Deployment)
+- **Deployment:** Web servers, APIs, stateless microservices
+- **StatefulSet:** Databases, message queues, distributed systems
+
+#### When to Use What?
+
+**Use ReplicaSet when:**
+- ⚠️ **Don't use directly** - Use Deployment instead
+- Only if you need very basic pod management
+- Lower-level control needed
+
+**Use Deployment when:**
+- ✅ **Stateless applications** - Web servers, APIs
+- ✅ **Need rolling updates** - Zero-downtime updates
+- ✅ **Need rollback** - Ability to revert changes
+- ✅ **Most common use case** - Default for stateless apps
+
+**Use StatefulSet when:**
+- ✅ **Stateful applications** - Databases, queues
+- ✅ **Need stable identity** - Pod names must be stable
+- ✅ **Need persistent storage** - Each pod needs its own storage
+- ✅ **Need ordered operations** - Deploy/scale in order
+
+#### Relationship Diagram
+
+```mermaid
+graph TB
+    Dep[Deployment]
+    SS[StatefulSet]
+    
+    Dep -->|Manages| RS[ReplicaSet]
+    SS -->|Manages| RS2[ReplicaSet]
+    
+    RS -->|Creates| Pod1[Pods<br/>Random Names]
+    RS2 -->|Creates| Pod2[Pods<br/>Stable Names]
+    
+    Pod2 -->|Has| PVC[Persistent Volumes]
+    
+    style Dep fill:#326ce5,color:#fff
+    style SS fill:#326ce5,color:#fff
+    style RS fill:#4fc3f7,color:#000
+    style RS2 fill:#4fc3f7,color:#000
+    style Pod1 fill:#f4a261,color:#000
+    style Pod2 fill:#f4a261,color:#000
+    style PVC fill:#90ee90,color:#000
+```
+
+#### Summary
+
+- **ReplicaSet:** Basic pod replica management (low-level)
+- **Deployment:** Stateless app management with updates (recommended for most cases)
+- **StatefulSet:** Stateful app management with stable identity (for databases, queues)
+
+**Best Practice:** Use Deployments for stateless applications and StatefulSets for stateful applications. ReplicaSets are typically managed by Deployments and StatefulSets, not created directly.
+
+---
+
+### DaemonSet
+
+**DaemonSet** ensures that a copy of a Pod runs on all (or specific) nodes in the cluster. It's used for system-level services that need to run on every node.
+
+#### What is a DaemonSet?
+
+A DaemonSet ensures that:
+- A copy of a Pod runs on **all nodes** in the cluster
+- Or on **selected nodes** (using node selectors)
+- Pods are automatically added when new nodes join
+- Pods are automatically removed when nodes are removed
+
+**Key Characteristics:**
+- **One Pod per Node:** Ensures one pod on each node
+- **Node-Specific:** Pods are tied to specific nodes
+- **Automatic Management:** Adds/removes pods as nodes join/leave
+- **System Services:** Perfect for logging, monitoring, networking
+
+#### DaemonSet Diagram
+
+```mermaid
+graph TB
+    DS[DaemonSet<br/>fluentd-logging]
+    
+    Node1[Node 1] -->|Runs| Pod1[fluentd Pod<br/>Node 1]
+    Node2[Node 2] -->|Runs| Pod2[fluentd Pod<br/>Node 2]
+    Node3[Node 3] -->|Runs| Pod3[fluentd Pod<br/>Node 3]
+    Node4[Node 4] -->|Runs| Pod4[fluentd Pod<br/>Node 4]
+    
+    DS -->|Ensures Pod on| Node1
+    DS -->|Ensures Pod on| Node2
+    DS -->|Ensures Pod on| Node3
+    DS -->|Ensures Pod on| Node4
+    
+    Node5[New Node 5] -.->|Joins Cluster| DS
+    DS -->|Creates| Pod5[fluentd Pod<br/>Node 5]
+    
+    style DS fill:#326ce5,color:#fff
+    style Node1 fill:#e3f2fd,color:#000
+    style Node2 fill:#e3f2fd,color:#000
+    style Node3 fill:#e3f2fd,color:#000
+    style Node4 fill:#e3f2fd,color:#000
+    style Node5 fill:#90ee90,color:#000
+    style Pod1 fill:#f4a261,color:#000
+    style Pod2 fill:#f4a261,color:#000
+    style Pod3 fill:#f4a261,color:#000
+    style Pod4 fill:#f4a261,color:#000
+    style Pod5 fill:#90ee90,color:#000
+```
+
+#### DaemonSet Structure
+
+```yaml
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: fluentd-logging
+spec:
+  selector:
+    matchLabels:
+      name: fluentd-logging
+  template:
+    metadata:
+      labels:
+        name: fluentd-logging
+    spec:
+      containers:
+      - name: fluentd
+        image: fluent/fluentd:latest
+        volumeMounts:
+        - name: varlog
+          mountPath: /var/log
+        - name: varlibdockercontainers
+          mountPath: /var/lib/docker/containers
+          readOnly: true
+      volumes:
+      - name: varlog
+        hostPath:
+          path: /var/log
+      - name: varlibdockercontainers
+        hostPath:
+          path: /var/lib/docker/containers
+```
+
+#### Creating DaemonSet
+
+**Method 1: Using YAML (Recommended)**
+
+```yaml
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: nginx-daemonset
+  namespace: nginx
+spec:
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx
+```
+
+```bash
+kubectl apply -f daemonset.yaml
+```
+
+**Method 2: Using kubectl**
+
+```bash
+# Create DaemonSet imperatively
+kubectl create daemonset nginx-ds --image=nginx:latest
+```
+
+#### Managing DaemonSet
+
+```bash
+# List DaemonSets
+kubectl get daemonsets
+kubectl get ds
+
+# Get DaemonSet details
+kubectl get ds <daemonset-name>
+
+# Describe DaemonSet
+kubectl describe ds <daemonset-name>
+
+# View pods created by DaemonSet
+kubectl get pods -l app=nginx
+
+# Update DaemonSet (change image)
+kubectl set image ds/<daemonset-name> nginx=nginx:1.21
+
+# Delete DaemonSet
+kubectl delete ds <daemonset-name>
+
+# Delete DaemonSet but keep pods
+kubectl delete ds <daemonset-name> --cascade=orphan
+```
+
+#### Node Selection
+
+**Run on All Nodes (Default):**
+
+```yaml
+spec:
+  template:
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:latest
+```
+
+**Run on Specific Nodes (Node Selector):**
+
+```yaml
+spec:
+  template:
+    spec:
+      nodeSelector:
+        disktype: ssd
+      containers:
+      - name: nginx
+        image: nginx:latest
+```
+
+**Run on Specific Nodes (Node Affinity):**
+
+```yaml
+spec:
+  template:
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: zone
+                operator: In
+                values:
+                - us-east-1a
+      containers:
+      - name: nginx
+        image: nginx:latest
+```
+
+#### DaemonSet Use Cases
+
+**1. Logging Agents**
+- Fluentd, Filebeat, Logstash
+- Collect logs from all nodes
+- Centralized logging
+
+**2. Monitoring Agents**
+- Prometheus Node Exporter
+- Datadog Agent
+- Collect metrics from all nodes
+
+**3. Network Plugins**
+- CNI plugins
+- Network policy agents
+- Run on every node
+
+**4. Storage Daemons**
+- GlusterFS, Ceph
+- Storage management
+- Run on storage nodes
+
+**5. Security Agents**
+- Security scanners
+- Antivirus agents
+- Run on all nodes
+
+#### DaemonSet vs Deployment
+
+| Aspect | DaemonSet | Deployment |
+|--------|-----------|------------|
+| **Pods per Node** | One pod per node | Fixed number of pods |
+| **Scaling** | Automatic (based on nodes) | Manual scaling |
+| **Node Selection** | All or selected nodes | Any available node |
+| **Use Case** | System services | Application services |
+| **Replicas** | Not specified | Specified in spec |
+
+#### DaemonSet Update Strategy
+
+**Rolling Update (Default):**
+
+```yaml
+spec:
+  updateStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1    # Max pods unavailable during update
+```
+
+**OnDelete:**
+
+```yaml
+spec:
+  updateStrategy:
+    type: OnDelete    # Update only when pod is deleted manually
+```
+
+#### DaemonSet Status
+
+```bash
+# Check DaemonSet status
+kubectl get ds <daemonset-name>
+
+# Output shows:
+# NAME              DESIRED   CURRENT   READY   UP-TO-DATE   AVAILABLE   NODE SELECTOR   AGE
+# fluentd-logging   3         3         3       3            3           <none>          5m
+
+# DESIRED: Number of nodes that should have pod
+# CURRENT: Number of pods currently running
+# READY: Number of pods ready
+# UP-TO-DATE: Number of pods updated to latest
+# AVAILABLE: Number of pods available
+```
+
+#### DaemonSet Best Practices
+
+1. **Use for system services** - Logging, monitoring, networking
+2. **Set resource limits** - Prevent resource exhaustion
+3. **Use hostPath volumes carefully** - Security implications
+4. **Set node selectors** - Run only on specific nodes when needed
+5. **Use tolerations** - Run on tainted nodes if needed
+6. **Set update strategy** - RollingUpdate or OnDelete
+7. **Use labels consistently** - For organization
+
+#### Tolerations for Tainted Nodes
+
+DaemonSets can run on tainted nodes using tolerations:
+
+```yaml
+spec:
+  template:
+    spec:
+      tolerations:
+      - key: "node-role.kubernetes.io/master"
+        operator: "Exists"
+        effect: "NoSchedule"
+      containers:
+      - name: nginx
+        image: nginx:latest
+```
+
+#### DaemonSet Example: Logging Agent
+
+```yaml
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: fluentd-logging
+  namespace: kube-system
+spec:
+  selector:
+    matchLabels:
+      name: fluentd-logging
+  template:
+    metadata:
+      labels:
+        name: fluentd-logging
+    spec:
+      tolerations:
+      - key: node-role.kubernetes.io/master
+        effect: NoSchedule
+      containers:
+      - name: fluentd
+        image: fluent/fluentd:latest
+        resources:
+          limits:
+            memory: 200Mi
+          requests:
+            cpu: 100m
+            memory: 200Mi
+        volumeMounts:
+        - name: varlog
+          mountPath: /var/log
+        - name: varlibdockercontainers
+          mountPath: /var/lib/docker/containers
+          readOnly: true
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - name: varlog
+        hostPath:
+          path: /var/log
+      - name: varlibdockercontainers
+        hostPath:
+          path: /var/lib/docker/containers
+```
+
+#### DaemonSet Commands Summary
+
+```bash
+# Create
+kubectl create -f daemonset.yaml
+kubectl create daemonset <name> --image=<image>
+
+# Get
+kubectl get daemonsets
+kubectl get ds
+kubectl describe ds <name>
+
+# Update
+kubectl set image ds/<name> <container>=<image>
+kubectl edit ds <name>
+
+# Delete
+kubectl delete ds <name>
+kubectl delete -f daemonset.yaml
+```
+
+#### Example Reference
+
+For a practical example of a DaemonSet YAML file, check out:
+
+- **[nginx/daemonset.yml](./nginx/daemonset.yml)** - Example DaemonSet definition
+
+This example demonstrates:
+- DaemonSet structure with selector
+- Pod template definition
+- Basic DaemonSet pattern for nginx
+- Namespace configuration
+
+**To use this example:**
+```bash
+# Apply the DaemonSet
+kubectl apply -f nginx/daemonset.yml
+
+# View the DaemonSet
+kubectl get ds -n nginx
+
+# View pods created by DaemonSet (one per node)
+kubectl get pods -n nginx -l app=nginx
+
+# Check which nodes have the pod
+kubectl get pods -n nginx -l app=nginx -o wide
+
+# Update the DaemonSet
+kubectl set image ds/nginx-daemonset nginx=nginx:1.21 -n nginx
+
+# Check DaemonSet status
+kubectl get ds nginx-daemonset -n nginx
+```
+
+#### Key Takeaways
+
+1. **DaemonSet runs one pod per node** - Ensures pod on all/selected nodes
+2. **Automatic management** - Adds pods when nodes join, removes when nodes leave
+3. **Perfect for system services** - Logging, monitoring, networking agents
+4. **Node selection** - Can run on all nodes or selected nodes
+5. **No replicas field** - Number of pods = number of nodes (or selected nodes)
+6. **Use tolerations** - To run on tainted nodes (like master nodes)
+7. **Update strategies** - RollingUpdate or OnDelete
+8. **HostPath volumes** - Common for accessing node filesystem
+
+DaemonSets are essential for running system-level services that need to be present on every node in your cluster.
