@@ -910,6 +910,9 @@ metadata:
 kubectl apply -f namespace.yaml
 ```
 
+**Example Reference:**
+- **[nginx/namespace.yml](./nginx/namespace.yml)** - Example namespace YAML file for nginx namespace
+
 **Method 3: Using kubectl with YAML (one-liner)**
 
 ```bash
@@ -1154,6 +1157,17 @@ kubectl get pods --all-namespaces
 kubectl get deployments -n development
 kubectl get deployments -n production
 ```
+
+#### Example Reference
+
+For a practical example of a namespace YAML file, check out:
+
+- **[nginx/namespace.yml](./nginx/namespace.yml)** - Example namespace definition for creating an nginx namespace
+
+This example demonstrates:
+- Basic namespace YAML structure
+- How to define a namespace with metadata
+- Simple namespace creation pattern
 
 #### Key Takeaways
 
