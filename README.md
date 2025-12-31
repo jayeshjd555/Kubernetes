@@ -14,6 +14,7 @@
    - [Namespaces](#namespaces)
    - [Pods](#pods)
    - [Labels and Selectors](#labels-and-selectors)
+   - [Annotations](#annotations)
    - [ReplicaSet](#replicaset)
    - [Deployments](#deployments)
    - [StatefulSet](#statefulset)
@@ -3038,6 +3039,374 @@ kubectl get pods -l 'env in (production,staging)'
 8. **Labels are queryable** - Use with kubectl -l flag
 
 Labels and selectors are fundamental to how Kubernetes organizes and connects objects. Understanding them is essential for working with Kubernetes effectively.
+
+---
+
+### Annotations
+
+**Annotations** are key-value pairs that can be attached to Kubernetes objects to store arbitrary, non-identifying metadata. Unlike labels, annotations are not used for selection or querying.
+
+#### What are Annotations?
+
+**Annotations** are metadata attached to Kubernetes objects that:
+- **Store metadata** - Additional information about objects
+- **Not for selection** - Unlike labels, not used for selection
+- **Arbitrary data** - Can store any string data
+- **Tool integration** - Used by tools and extensions
+
+**Key Characteristics:**
+- **Key-Value Pairs:** Similar to labels but for metadata
+- **Not Queryable:** Cannot use annotations in selectors
+- **Arbitrary Data:** Can store any string (including JSON)
+- **Tool Usage:** Used by tools, libraries, and extensions
+
+#### Annotations vs Labels
+
+| Aspect | Labels | Annotations |
+|--------|--------|-------------|
+| **Purpose** | Identification and selection | Metadata storage |
+| **Queryable** | ✅ Yes (with selectors) | ❌ No |
+| **Used for Selection** | ✅ Yes | ❌ No |
+| **Data Type** | String values | String values (can be JSON) |
+| **Length** | Max 63 chars | No limit |
+| **Use Case** | Organization, selection | Metadata, tool integration |
+
+#### Annotation Syntax
+
+**Annotation Format:**
+- **Key:** Similar to labels (alphanumeric, hyphens, dots)
+- **Value:** Any string (can include JSON, URLs, etc.)
+- **No Length Limit:** Unlike labels
+- **Prefix:** Optional prefix (e.g., `kubernetes.io/`)
+
+**Valid Examples:**
+```yaml
+annotations:
+  description: "Web server pod"
+  contact: "team@example.com"
+  build-version: "1.2.3"
+  deployment.kubernetes.io/revision: "1"
+  kubectl.kubernetes.io/last-applied-configuration: '{"apiVersion":"v1"...}'
+```
+
+#### Adding Annotations
+
+**Method 1: In YAML**
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx-pod
+  annotations:
+    description: "Web server pod for production"
+    contact: "web-team@example.com"
+    build-version: "1.2.3"
+    deployment-date: "2024-01-15"
+spec:
+  containers:
+  - name: nginx
+    image: nginx:latest
+```
+
+**Method 2: Using kubectl**
+
+```bash
+# Add annotation
+kubectl annotate pod nginx-pod description="Web server pod"
+
+# Add multiple annotations
+kubectl annotate pod nginx-pod \
+  description="Web server pod" \
+  contact="team@example.com"
+
+# Overwrite existing annotation
+kubectl annotate pod nginx-pod description="Updated description" --overwrite
+
+# Remove annotation
+kubectl annotate pod nginx-pod description-
+```
+
+#### Viewing Annotations
+
+```bash
+# View annotations
+kubectl get pod nginx-pod -o jsonpath='{.metadata.annotations}'
+
+# View specific annotation
+kubectl get pod nginx-pod -o jsonpath='{.metadata.annotations.description}'
+
+# View with describe
+kubectl describe pod nginx-pod
+
+# View in YAML
+kubectl get pod nginx-pod -o yaml
+```
+
+#### Common Annotations
+
+**Kubernetes System Annotations:**
+
+```yaml
+annotations:
+  # Deployment revision
+  deployment.kubernetes.io/revision: "2"
+  
+  # Last applied configuration
+  kubectl.kubernetes.io/last-applied-configuration: '{"apiVersion":"v1"...}'
+  
+  # Pod disruption budget
+  pod-disruption-budget.kubernetes.io/name: "my-pdb"
+```
+
+**Custom Annotations:**
+
+```yaml
+annotations:
+  # Build information
+  build-version: "1.2.3"
+  build-date: "2024-01-15"
+  git-commit: "abc1234"
+  
+  # Contact information
+  contact: "team@example.com"
+  owner: "web-team"
+  
+  # Documentation
+  description: "Web server pod"
+  documentation: "https://docs.example.com/nginx"
+  
+  # Tool integration
+  prometheus.io/scrape: "true"
+  prometheus.io/port: "8080"
+```
+
+#### Annotation Use Cases
+
+**1. Build and Version Information**
+
+```yaml
+annotations:
+  build-version: "1.2.3"
+  build-date: "2024-01-15T10:00:00Z"
+  git-commit: "abc1234"
+  git-branch: "main"
+```
+
+**2. Contact and Ownership**
+
+```yaml
+annotations:
+  contact: "team@example.com"
+  owner: "web-team"
+  slack-channel: "#web-team"
+```
+
+**3. Tool Integration**
+
+```yaml
+annotations:
+  # Prometheus scraping
+  prometheus.io/scrape: "true"
+  prometheus.io/port: "8080"
+  prometheus.io/path: "/metrics"
+  
+  # Linkerd
+  linkerd.io/inject: enabled
+  
+  # Istio
+  sidecar.istio.io/inject: "true"
+```
+
+**4. Documentation**
+
+```yaml
+annotations:
+  description: "Web server pod for production environment"
+  documentation: "https://docs.example.com/nginx"
+  runbook: "https://runbook.example.com/nginx"
+```
+
+**5. Deployment Information**
+
+```yaml
+annotations:
+  deployment-date: "2024-01-15"
+  deployed-by: "ci-cd-pipeline"
+  deployment-reason: "Rolling update"
+```
+
+**6. JSON Data**
+
+```yaml
+annotations:
+  config: '{"database":"mysql","port":3306}'
+  metadata: '{"team":"web","environment":"production"}'
+```
+
+#### Annotations in Different Objects
+
+**Pod Annotations:**
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  annotations:
+    description: "Web server pod"
+    build-version: "1.2.3"
+```
+
+**Deployment Annotations:**
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    deployment.kubernetes.io/revision: "2"
+    description: "Web server deployment"
+```
+
+**Service Annotations:**
+
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
+    description: "Load balancer service"
+```
+
+#### Annotation Best Practices
+
+**1. Use for Metadata, Not Selection**
+
+```yaml
+# ✅ Good - Use annotations for metadata
+annotations:
+  description: "Web server pod"
+  contact: "team@example.com"
+
+# ❌ Wrong - Use labels for selection
+annotations:
+  app: nginx  # Should be in labels
+```
+
+**2. Use Standard Prefixes**
+
+```yaml
+annotations:
+  # Kubernetes standard
+  deployment.kubernetes.io/revision: "2"
+  
+  # Tool-specific
+  prometheus.io/scrape: "true"
+  
+  # Custom with prefix
+  mycompany.com/team: "web"
+```
+
+**3. Store Structured Data as JSON**
+
+```yaml
+annotations:
+  config: '{"database":"mysql","port":3306}'
+  metadata: '{"team":"web","env":"prod"}'
+```
+
+**4. Document Important Information**
+
+```yaml
+annotations:
+  description: "Web server pod"
+  documentation: "https://docs.example.com"
+  runbook: "https://runbook.example.com"
+```
+
+**5. Don't Store Sensitive Data**
+
+```yaml
+# ❌ Bad - Don't store secrets
+annotations:
+  password: "secret123"  # Use Secrets instead
+
+# ✅ Good - Store non-sensitive metadata
+annotations:
+  description: "Web server pod"
+```
+
+#### Annotations Commands Summary
+
+```bash
+# Add annotation
+kubectl annotate <resource> <name> <key>=<value>
+
+# Add multiple annotations
+kubectl annotate <resource> <name> <key1>=<value1> <key2>=<value2>
+
+# Overwrite annotation
+kubectl annotate <resource> <name> <key>=<value> --overwrite
+
+# Remove annotation
+kubectl annotate <resource> <name> <key>-
+
+# View annotations
+kubectl get <resource> <name> -o jsonpath='{.metadata.annotations}'
+
+# View specific annotation
+kubectl get <resource> <name> -o jsonpath='{.metadata.annotations.<key>}'
+```
+
+#### Practical Examples
+
+**Example 1: Add Build Information**
+
+```bash
+# Add build annotations to pod
+kubectl annotate pod nginx-pod \
+  build-version="1.2.3" \
+  build-date="2024-01-15" \
+  git-commit="abc1234"
+```
+
+**Example 2: Add Tool Integration**
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "8080"
+    prometheus.io/path: "/metrics"
+```
+
+**Example 3: Add Documentation**
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    description: "Web server deployment"
+    documentation: "https://docs.example.com/nginx"
+    contact: "web-team@example.com"
+```
+
+#### Key Takeaways
+
+1. **Annotations store metadata** - Not used for selection
+2. **Not queryable** - Cannot use in selectors
+3. **Arbitrary data** - Can store any string (including JSON)
+4. **No length limit** - Unlike labels (63 chars)
+5. **Tool integration** - Used by monitoring, service mesh, etc.
+6. **Use for metadata** - Description, contact, build info
+7. **Don't store secrets** - Use Secrets for sensitive data
+8. **Use standard prefixes** - For tool integration
+
+Annotations complement labels by providing a way to store additional metadata that doesn't need to be queryable or used for selection.
 
 ---
 
