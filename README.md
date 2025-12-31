@@ -1,5 +1,20 @@
 # Kubernetes Notes
 
+## Table of Contents
+
+1. [Introduction & Overview of Kubernetes Concepts](#introduction--overview-of-kubernetes-concepts)
+2. [Kubernetes History](#kubernetes-history)
+3. [Why Should We Learn Kubernetes?](#why-should-we-learn-kubernetes)
+4. [Monolithic vs Microservices Architecture](#monolithic-vs-microservices-architecture)
+5. [Kubernetes Architecture](#kubernetes-architecture)
+6. [Kubernetes Setup](#kubernetes-setup)
+7. [Kubernetes Concepts](#kubernetes-concepts)
+   - [Kubernetes Objects and its Management](#kubernetes-objects-and-its-management)
+   - [Field Selectors](#field-selectors)
+   - [Namespaces](#namespaces)
+
+---
+
 ## Introduction & Overview of Kubernetes Concepts
 
 ### What is Kubernetes?
@@ -816,6 +831,609 @@ Each method has its place in the Kubernetes ecosystem, and you may use different
 ## Kubernetes Concepts
 
 This section covers fundamental Kubernetes concepts that you need to understand to work effectively with Kubernetes clusters.
+
+### Kubernetes Objects and its Management
+
+Kubernetes objects are persistent entities in the Kubernetes system that represent the state of your cluster. They describe what containerized applications are running, what resources they're using, and policies around how those applications behave.
+
+#### What are Kubernetes Objects?
+
+**Kubernetes Objects** are records of intent - you create objects to describe the desired state of your cluster. Kubernetes continuously works to ensure the actual state matches your desired state.
+
+**Key Characteristics:**
+- **Persistent:** Objects persist in etcd (cluster state store)
+- **Declarative:** You describe desired state, Kubernetes makes it happen
+- **Managed:** Kubernetes controllers manage object lifecycle
+- **Namespaced or Cluster-scoped:** Objects belong to namespaces or cluster-wide
+
+#### Object Spec and Status
+
+Every Kubernetes object has two important fields:
+
+1. **spec:** Describes the desired state
+   - What you want the object to look like
+   - Defined by you when creating the object
+
+2. **status:** Describes the actual state
+   - Current state of the object
+   - Managed by Kubernetes
+
+**Example:**
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: my-pod
+spec:                    # Desired state
+  containers:
+  - name: nginx
+    image: nginx:latest
+status:                  # Actual state (managed by Kubernetes)
+  phase: Running
+  conditions: [...]
+```
+
+#### Common Kubernetes Objects
+
+**Workload Objects:**
+- **Pod:** Smallest deployable unit (one or more containers)
+- **Deployment:** Manages pod replicas and updates
+- **ReplicaSet:** Ensures specified number of pod replicas
+- **StatefulSet:** Manages stateful applications
+- **DaemonSet:** Ensures pod runs on all/some nodes
+- **Job:** Runs a task to completion
+- **CronJob:** Runs jobs on a schedule
+
+**Service Objects:**
+- **Service:** Exposes pods as network service
+- **Ingress:** Manages external HTTP/HTTPS access
+
+**Configuration Objects:**
+- **ConfigMap:** Stores configuration data
+- **Secret:** Stores sensitive data
+- **Namespace:** Logical grouping of resources
+
+**Storage Objects:**
+- **PersistentVolume:** Cluster-wide storage
+- **PersistentVolumeClaim:** Request for storage
+- **StorageClass:** Defines storage classes
+
+**Policy Objects:**
+- **ResourceQuota:** Limits resource usage
+- **LimitRange:** Constraints on resources
+- **NetworkPolicy:** Network access control
+
+#### Object Management Methods
+
+Kubernetes provides three ways to manage objects:
+
+**1. Imperative Commands**
+- Direct commands that immediately perform operations
+- Good for learning and quick tasks
+- Not recommended for production
+
+```bash
+# Create object
+kubectl create deployment myapp --image=nginx
+
+# Update object
+kubectl scale deployment myapp --replicas=3
+
+# Delete object
+kubectl delete deployment myapp
+```
+
+**2. Imperative Object Configuration**
+- Commands that specify the operation and configuration
+- Configuration stored in files
+- Operations are explicit
+
+```bash
+# Create from file
+kubectl create -f deployment.yaml
+
+# Replace object
+kubectl replace -f deployment.yaml
+
+# Delete object
+kubectl delete -f deployment.yaml
+```
+
+**3. Declarative Object Configuration (Recommended)**
+- You describe desired state in files
+- Kubernetes determines operations needed
+- Best for production and version control
+
+```bash
+# Apply configuration
+kubectl apply -f deployment.yaml
+
+# Kubernetes automatically:
+# - Creates object if it doesn't exist
+# - Updates object if it exists
+# - Maintains desired state
+```
+
+#### Object YAML Structure
+
+All Kubernetes objects follow a similar YAML structure:
+
+```yaml
+apiVersion: v1          # API version
+kind: Pod              # Object type
+metadata:              # Object metadata
+  name: my-pod         # Object name
+  namespace: default   # Namespace (optional)
+  labels:              # Labels (optional)
+    app: nginx
+spec:                  # Desired state
+  # Object-specific configuration
+status:                # Actual state (read-only, managed by K8s)
+  # Current state
+```
+
+**Required Fields:**
+- `apiVersion`: Which version of Kubernetes API
+- `kind`: What kind of object
+- `metadata`: Object identification (name, namespace, labels)
+- `spec`: Desired state (varies by object type)
+
+#### Object Metadata
+
+**Common Metadata Fields:**
+
+```yaml
+metadata:
+  name: my-pod                    # Object name (required)
+  namespace: default              # Namespace (optional)
+  labels:                         # Key-value pairs for selection
+    app: nginx
+    env: production
+  annotations:                    # Non-identifying metadata
+    description: "Web server pod"
+  uid: "123e4567-e89b-12d3..."   # Unique ID (auto-generated)
+  resourceVersion: "12345"        # Version for optimistic concurrency
+  generation: 1                   # Generation number
+  creationTimestamp: "2024-01-01T00:00:00Z"
+```
+
+**Labels:**
+- Key-value pairs attached to objects
+- Used for selection and organization
+- Example: `app=nginx`, `env=production`
+
+**Annotations:**
+- Key-value pairs for metadata
+- Not used for selection
+- Example: `description`, `contact-info`
+
+#### Object Lifecycle
+
+**Lifecycle Stages:**
+
+1. **Creation:** Object created via API
+2. **Validation:** Kubernetes validates the object
+3. **Storage:** Object stored in etcd
+4. **Reconciliation:** Controllers reconcile desired vs actual state
+5. **Deletion:** Object marked for deletion
+6. **Finalization:** Finalizers run (if any)
+7. **Removal:** Object removed from etcd
+
+#### Managing Objects with kubectl
+
+**Viewing Objects:**
+
+```bash
+# List objects
+kubectl get <object-type>
+kubectl get pods
+kubectl get deployments
+
+# Get specific object
+kubectl get <object-type> <object-name>
+kubectl get pod my-pod
+
+# Describe object (detailed info)
+kubectl describe <object-type> <object-name>
+kubectl describe pod my-pod
+
+# Get object YAML
+kubectl get <object-type> <object-name> -o yaml
+
+# Get object JSON
+kubectl get <object-type> <object-name> -o json
+```
+
+**Creating Objects:**
+
+```bash
+# From YAML file
+kubectl apply -f object.yaml
+kubectl create -f object.yaml
+
+# From stdin
+cat object.yaml | kubectl apply -f -
+
+# Multiple files
+kubectl apply -f file1.yaml -f file2.yaml
+
+# Directory
+kubectl apply -f ./manifests/
+```
+
+**Updating Objects:**
+
+```bash
+# Apply changes (declarative)
+kubectl apply -f updated-object.yaml
+
+# Edit object interactively
+kubectl edit <object-type> <object-name>
+
+# Patch object
+kubectl patch <object-type> <object-name> -p '{"spec":{"replicas":3}}'
+
+# Replace object
+kubectl replace -f object.yaml
+```
+
+**Deleting Objects:**
+
+```bash
+# Delete by name
+kubectl delete <object-type> <object-name>
+
+# Delete from file
+kubectl delete -f object.yaml
+
+# Delete by label
+kubectl delete <object-type> -l app=nginx
+
+# Delete all objects of type
+kubectl delete <object-type> --all
+```
+
+#### Object Relationships
+
+Objects in Kubernetes often relate to each other:
+
+**Owner References:**
+- Objects can have owners
+- Deleting owner deletes owned objects (cascading deletion)
+- Example: ReplicaSet owns Pods
+
+**Labels and Selectors:**
+- Objects use labels to identify related objects
+- Selectors match labels
+- Example: Service selects Pods by labels
+
+**Dependencies:**
+- Some objects depend on others
+- Example: Pod depends on ConfigMap/Secret
+
+#### Best Practices for Object Management
+
+**1. Use Declarative Configuration**
+```bash
+# ✅ Good: Declarative
+kubectl apply -f deployment.yaml
+
+# ⚠️ Avoid: Imperative
+kubectl create deployment myapp --image=nginx
+```
+
+**2. Version Control Your Configurations**
+- Store YAML files in Git
+- Track changes over time
+- Enable rollback capability
+
+**3. Use Meaningful Names**
+```yaml
+# ✅ Good
+name: frontend-deployment
+
+# ⚠️ Avoid
+name: app1
+```
+
+**4. Use Labels Consistently**
+```yaml
+labels:
+  app: frontend
+  env: production
+  team: web
+```
+
+**5. Organize with Namespaces**
+- Group related objects in namespaces
+- Separate environments
+- Apply policies per namespace
+
+**6. Use kubectl apply**
+- Idempotent operations
+- Handles creation and updates
+- Better for automation
+
+#### Common kubectl Commands
+
+```bash
+# Get objects
+kubectl get <resource>
+kubectl get pods
+kubectl get deployments
+kubectl get services
+
+# Describe object
+kubectl describe <resource> <name>
+
+# Create/Apply
+kubectl apply -f <file>
+kubectl create -f <file>
+
+# Edit
+kubectl edit <resource> <name>
+
+# Delete
+kubectl delete <resource> <name>
+kubectl delete -f <file>
+
+# Watch
+kubectl get <resource> -w
+
+# Output formats
+kubectl get <resource> -o yaml
+kubectl get <resource> -o json
+kubectl get <resource> -o wide
+```
+
+#### Key Takeaways
+
+1. **Objects are persistent entities** - Represent cluster state
+2. **Declarative approach** - Describe desired state, Kubernetes makes it happen
+3. **spec vs status** - spec is desired, status is actual
+4. **Use kubectl apply** - Recommended for object management
+5. **Version control** - Store YAML files in Git
+6. **Labels and selectors** - Organize and select objects
+7. **Namespaces** - Organize objects logically
+8. **Object relationships** - Objects relate through owners and selectors
+
+Understanding Kubernetes objects and their management is fundamental to working with Kubernetes effectively.
+
+---
+
+### Field Selectors
+
+**Field Selectors** allow you to filter Kubernetes objects based on field values. They provide a way to select objects using specific field values rather than labels.
+
+#### What are Field Selectors?
+
+Field selectors let you select Kubernetes objects based on the values of one or more resource fields. Unlike label selectors, field selectors filter by actual field values in the object.
+
+**Key Characteristics:**
+- Filter objects by field values
+- Different from label selectors
+- Support different fields per resource type
+- Used with `kubectl get` commands
+
+#### Field Selector Syntax
+
+```bash
+# Basic syntax
+kubectl get <resource> --field-selector <field>=<value>
+
+# Multiple selectors (AND logic)
+kubectl get <resource> --field-selector <field1>=<value1>,<field2>=<value2>
+```
+
+#### Common Field Selectors
+
+**For Pods:**
+
+```bash
+# Select pods by node
+kubectl get pods --field-selector spec.nodeName=node-1
+
+# Select pods by phase (Running, Pending, Succeeded, Failed)
+kubectl get pods --field-selector status.phase=Running
+
+# Select pods not assigned to any node
+kubectl get pods --field-selector spec.nodeName=
+
+# Multiple selectors
+kubectl get pods --field-selector status.phase=Running,spec.nodeName=node-1
+```
+
+**For Nodes:**
+
+```bash
+# Select nodes by condition
+kubectl get nodes --field-selector status.conditions[?(@.type=="Ready")].status=True
+
+# Select nodes by unschedulable status
+kubectl get nodes --field-selector spec.unschedulable=false
+```
+
+**For PersistentVolumes:**
+
+```bash
+# Select by phase
+kubectl get pv --field-selector status.phase=Available
+
+# Select by storage class
+kubectl get pv --field-selector spec.storageClassName=fast-ssd
+```
+
+#### Field Selector vs Label Selector
+
+| Aspect | Field Selector | Label Selector |
+|--------|---------------|----------------|
+| **Syntax** | `--field-selector` | `-l` or `--selector` |
+| **Filters by** | Object field values | Label key-value pairs |
+| **Use Case** | System fields (status, spec) | Custom organization |
+| **Examples** | `status.phase=Running` | `app=nginx` |
+| **Flexibility** | Limited to specific fields | Any custom labels |
+
+**When to Use Field Selectors:**
+- Filter by system fields (status, phase, node assignment)
+- Find objects in specific states
+- Filter by infrastructure-related fields
+
+**When to Use Label Selectors:**
+- Filter by application/team/environment
+- Custom organization and grouping
+- Application-specific filtering
+
+#### Practical Examples
+
+**Example 1: Find Running Pods**
+
+```bash
+# Get all running pods
+kubectl get pods --field-selector status.phase=Running
+
+# Get running pods in specific namespace
+kubectl get pods -n production --field-selector status.phase=Running
+```
+
+**Example 2: Find Pods on Specific Node**
+
+```bash
+# Get all pods on node-1
+kubectl get pods --field-selector spec.nodeName=node-1
+
+# Get pods on node-1 that are running
+kubectl get pods --field-selector spec.nodeName=node-1,status.phase=Running
+```
+
+**Example 3: Find Unassigned Pods**
+
+```bash
+# Pods not yet assigned to a node
+kubectl get pods --field-selector spec.nodeName=
+
+# Useful for debugging scheduling issues
+```
+
+**Example 4: Find Available PersistentVolumes**
+
+```bash
+# Get available persistent volumes
+kubectl get pv --field-selector status.phase=Available
+
+# Get bound persistent volumes
+kubectl get pv --field-selector status.phase=Bound
+```
+
+**Example 5: Combine with Other Filters**
+
+```bash
+# Running pods in production namespace on node-1
+kubectl get pods -n production \
+  --field-selector status.phase=Running,spec.nodeName=node-1
+
+# With label selector
+kubectl get pods -l app=nginx \
+  --field-selector status.phase=Running
+```
+
+#### Available Field Selectors by Resource
+
+**Pods:**
+- `spec.nodeName` - Node name
+- `spec.restartPolicy` - Restart policy
+- `status.phase` - Pod phase (Pending, Running, Succeeded, Failed)
+- `status.podIP` - Pod IP address
+- `metadata.namespace` - Namespace
+
+**Nodes:**
+- `metadata.name` - Node name
+- `spec.unschedulable` - Schedulable status
+
+**PersistentVolumes:**
+- `status.phase` - Volume phase (Available, Bound, Released, Failed)
+- `spec.storageClassName` - Storage class name
+
+**PersistentVolumeClaims:**
+- `status.phase` - Claim phase
+- `spec.storageClassName` - Storage class name
+
+#### Field Selector Limitations
+
+**Not All Fields are Supported:**
+- Only specific fields can be used in field selectors
+- Complex fields (arrays, nested objects) may not be supported
+- Field selector support varies by resource type
+
+**Comparison Operators:**
+- Field selectors support equality (`=`) only
+- No support for `!=`, `>`, `<`, `in`, `notin` like label selectors
+- For complex filtering, use label selectors or `jq`/`grep`
+
+#### Combining Field and Label Selectors
+
+You can combine both selectors for powerful filtering:
+
+```bash
+# Pods with label app=nginx that are running
+kubectl get pods -l app=nginx --field-selector status.phase=Running
+
+# Pods with label env=production on node-1
+kubectl get pods -l env=production --field-selector spec.nodeName=node-1
+```
+
+#### Field Selector Best Practices
+
+1. **Use for System Fields**
+   - Status, phase, node assignment
+   - Infrastructure-related filtering
+
+2. **Combine with Labels**
+   - Use field selectors for system state
+   - Use label selectors for application logic
+
+3. **Know the Limitations**
+   - Not all fields are supported
+   - Only equality comparison
+
+4. **Use for Debugging**
+   - Find pods in specific states
+   - Debug scheduling issues
+   - Monitor resource status
+
+#### Field Selector Commands Summary
+
+```bash
+# Basic field selector
+kubectl get <resource> --field-selector <field>=<value>
+
+# Multiple field selectors
+kubectl get <resource> --field-selector <field1>=<value1>,<field2>=<value2>
+
+# Combine with label selector
+kubectl get <resource> -l <label> --field-selector <field>=<value>
+
+# Common pod field selectors
+kubectl get pods --field-selector status.phase=Running
+kubectl get pods --field-selector spec.nodeName=node-1
+kubectl get pods --field-selector spec.nodeName=
+
+# Common PV field selectors
+kubectl get pv --field-selector status.phase=Available
+```
+
+#### Key Takeaways
+
+1. **Field selectors filter by field values** - Not labels
+2. **Use for system fields** - Status, phase, node assignment
+3. **Limited to equality** - Only `=` operator supported
+4. **Combine with labels** - Use both for powerful filtering
+5. **Not all fields supported** - Check documentation for available fields
+6. **Useful for debugging** - Find objects in specific states
+7. **Different from label selectors** - Each has its use case
+
+Field selectors are a powerful tool for filtering Kubernetes objects based on their actual field values, especially useful for system-level filtering and debugging.
+
+---
 
 ### Namespaces
 
