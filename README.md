@@ -810,3 +810,360 @@ Cloud providers offer fully managed Kubernetes services that handle cluster setu
 4. **Custom Needs:** Use kubeadm for full control
 
 Each method has its place in the Kubernetes ecosystem, and you may use different methods for different purposes.
+
+---
+
+## Kubernetes Concepts
+
+This section covers fundamental Kubernetes concepts that you need to understand to work effectively with Kubernetes clusters.
+
+### Namespaces
+
+**Namespaces** in Kubernetes provide a way to divide cluster resources between multiple users, teams, or projects. Think of namespaces as virtual clusters within a physical Kubernetes cluster.
+
+#### What are Namespaces?
+
+Namespaces are a mechanism for organizing and isolating resources in a Kubernetes cluster. They provide:
+
+- **Resource Isolation:** Resources in different namespaces are isolated from each other
+- **Resource Quotas:** Set resource limits per namespace
+- **Access Control:** Apply RBAC policies per namespace
+- **Organization:** Group related resources together
+
+#### Default Namespaces
+
+Kubernetes comes with several built-in namespaces:
+
+1. **default**
+   - Default namespace for resources when no namespace is specified
+   - Where your resources go if you don't specify a namespace
+
+2. **kube-system**
+   - System namespace for Kubernetes system components
+   - Contains system pods (kube-proxy, kube-dns, etc.)
+   - ⚠️ **Don't create user resources here**
+
+3. **kube-public**
+   - Publicly accessible namespace
+   - Contains cluster information readable by all users
+   - Rarely used
+
+4. **kube-node-lease**
+   - Used for node heartbeat
+   - Helps detect node failures
+   - Managed by Kubernetes automatically
+
+#### Why Use Namespaces?
+
+**1. Resource Organization**
+```
+Production Environment
+├── production namespace
+│   ├── frontend pods
+│   ├── backend pods
+│   └── database pods
+└── staging namespace
+    ├── frontend pods
+    ├── backend pods
+    └── database pods
+```
+
+**2. Resource Quotas**
+- Limit CPU and memory per namespace
+- Prevent one team from consuming all resources
+- Enforce resource limits per project
+
+**3. Access Control**
+- Different teams can have access to different namespaces
+- Isolate sensitive environments (production)
+- Apply different security policies
+
+**4. Environment Separation**
+- Separate development, staging, and production
+- Avoid conflicts between environments
+- Easy to clean up (delete namespace)
+
+#### Creating Namespaces
+
+**Method 1: Using kubectl**
+
+```bash
+# Create namespace
+kubectl create namespace <namespace-name>
+
+# Example
+kubectl create namespace development
+kubectl create namespace production
+```
+
+**Method 2: Using YAML**
+
+```yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: development
+```
+
+```bash
+# Apply YAML
+kubectl apply -f namespace.yaml
+```
+
+**Method 3: Using kubectl with YAML (one-liner)**
+
+```bash
+kubectl create namespace development --dry-run=client -o yaml | kubectl apply -f -
+```
+
+#### Viewing Namespaces
+
+```bash
+# List all namespaces
+kubectl get namespaces
+# or
+kubectl get ns
+
+# View specific namespace
+kubectl get namespace <namespace-name>
+# or
+kubectl get ns <namespace-name>
+
+# Describe namespace
+kubectl describe namespace <namespace-name>
+```
+
+#### Working with Namespaces
+
+**Creating Resources in a Namespace**
+
+```bash
+# Method 1: Use --namespace or -n flag
+kubectl create deployment myapp --image=nginx -n development
+
+# Method 2: Set default namespace context
+kubectl config set-context --current --namespace=development
+kubectl create deployment myapp --image=nginx
+
+# Method 3: Specify in YAML
+```
+
+**YAML Example:**
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: my-pod
+  namespace: development  # Specify namespace here
+spec:
+  containers:
+  - name: nginx
+    image: nginx:latest
+```
+
+**Viewing Resources in Namespaces**
+
+```bash
+# List pods in specific namespace
+kubectl get pods -n development
+
+# List all resources in namespace
+kubectl get all -n development
+
+# List resources across all namespaces
+kubectl get pods --all-namespaces
+# or
+kubectl get pods -A
+```
+
+**Switching Namespace Context**
+
+```bash
+# Set default namespace for current context
+kubectl config set-context --current --namespace=development
+
+# Verify current namespace
+kubectl config view --minify | grep namespace
+
+# List current namespace
+kubectl config view --minify -o jsonpath='{..namespace}'
+```
+
+#### Deleting Namespaces
+
+```bash
+# Delete namespace (deletes all resources in it)
+kubectl delete namespace <namespace-name>
+
+# Example
+kubectl delete namespace development
+
+# ⚠️ Warning: This deletes ALL resources in the namespace!
+```
+
+**Important Notes:**
+- ⚠️ Deleting a namespace deletes **all resources** in that namespace
+- ⚠️ Default and kube-system namespaces **cannot be deleted**
+- ⚠️ Namespace deletion is asynchronous (may take time)
+
+#### Namespace Best Practices
+
+**1. Use Namespaces for Environments**
+```
+development namespace → Development environment
+staging namespace → Staging environment
+production namespace → Production environment
+```
+
+**2. Use Namespaces for Teams**
+```
+team-a namespace → Team A's resources
+team-b namespace → Team B's resources
+```
+
+**3. Use Namespaces for Applications**
+```
+app-frontend namespace → Frontend application
+app-backend namespace → Backend application
+```
+
+**4. Set Resource Quotas**
+```yaml
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: compute-quota
+  namespace: development
+spec:
+  hard:
+    requests.cpu: "4"
+    requests.memory: 8Gi
+    limits.cpu: "8"
+    limits.memory: 16Gi
+```
+
+**5. Apply RBAC Policies**
+- Use Role and RoleBinding for namespace-level permissions
+- Grant access only to necessary namespaces
+
+#### Common Namespace Patterns
+
+**Pattern 1: Environment-Based**
+```
+production
+staging
+development
+testing
+```
+
+**Pattern 2: Team-Based**
+```
+team-frontend
+team-backend
+team-devops
+```
+
+**Pattern 3: Application-Based**
+```
+app-user-service
+app-order-service
+app-payment-service
+```
+
+**Pattern 4: Hybrid**
+```
+production-frontend
+production-backend
+staging-frontend
+staging-backend
+```
+
+#### Namespace Limitations
+
+**What Namespaces DON'T Provide:**
+- ❌ **Network Isolation:** Pods in different namespaces can still communicate
+- ❌ **Complete Security:** Not a security boundary by itself
+- ❌ **Resource Isolation:** Resources are still in the same cluster
+
+**What You Need for True Isolation:**
+- Network Policies (for network isolation)
+- RBAC (for access control)
+- Resource Quotas (for resource limits)
+
+#### Namespace Commands Summary
+
+```bash
+# Create
+kubectl create namespace <name>
+
+# List
+kubectl get namespaces
+kubectl get ns
+
+# Describe
+kubectl describe namespace <name>
+
+# Delete
+kubectl delete namespace <name>
+
+# Set default
+kubectl config set-context --current --namespace=<name>
+
+# View resources in namespace
+kubectl get <resource> -n <namespace>
+
+# View resources in all namespaces
+kubectl get <resource> --all-namespaces
+kubectl get <resource> -A
+```
+
+#### Practical Examples
+
+**Example 1: Create Development Environment**
+
+```bash
+# Create namespace
+kubectl create namespace development
+
+# Create deployment in development namespace
+kubectl create deployment myapp --image=nginx -n development
+
+# View pods in development
+kubectl get pods -n development
+```
+
+**Example 2: Switch Between Namespaces**
+
+```bash
+# Work in development
+kubectl config set-context --current --namespace=development
+kubectl get pods
+
+# Switch to production
+kubectl config set-context --current --namespace=production
+kubectl get pods
+```
+
+**Example 3: Compare Resources Across Namespaces**
+
+```bash
+# View all pods across namespaces
+kubectl get pods --all-namespaces
+
+# View deployments in specific namespaces
+kubectl get deployments -n development
+kubectl get deployments -n production
+```
+
+#### Key Takeaways
+
+1. **Namespaces organize resources** - Group related resources together
+2. **Namespaces provide isolation** - Separate environments, teams, or applications
+3. **Use --namespace or -n flag** - Specify namespace in commands
+4. **Set default namespace** - Use `kubectl config set-context` for convenience
+5. **Namespaces don't provide network isolation** - Use Network Policies for that
+6. **Delete namespace carefully** - It deletes all resources in it
+7. **Use Resource Quotas** - Limit resources per namespace
+8. **Apply RBAC** - Control access per namespace
+
+Namespaces are a fundamental concept in Kubernetes that help you organize and manage resources effectively in your cluster.
