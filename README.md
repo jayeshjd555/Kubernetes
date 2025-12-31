@@ -13,6 +13,7 @@
    - [Field Selectors](#field-selectors)
    - [Namespaces](#namespaces)
    - [Pods](#pods)
+   - [Labels and Selectors](#labels-and-selectors)
    - [ReplicaSet](#replicaset)
    - [Deployments](#deployments)
    - [StatefulSet](#statefulset)
@@ -2570,6 +2571,473 @@ kubectl exec -it nginx-pod -n nginx -- /bin/bash
 10. **One container per Pod is common** - Multi-container Pods for specific use cases
 
 Pods are the fundamental building blocks of Kubernetes applications. Understanding Pods is essential for working with Kubernetes effectively.
+
+---
+
+### Labels and Selectors
+
+**Labels** and **Selectors** are fundamental concepts in Kubernetes that enable you to organize and select groups of objects. They are key-value pairs attached to objects for identification and selection.
+
+#### What are Labels?
+
+**Labels** are key-value pairs attached to Kubernetes objects (Pods, Services, Deployments, etc.) that are used to:
+- **Organize objects** - Group related objects
+- **Identify objects** - Mark objects with meaningful attributes
+- **Select objects** - Find and operate on groups of objects
+- **Filter objects** - Query and filter based on labels
+
+**Key Characteristics:**
+- **Key-Value Pairs:** Simple string key-value pairs
+- **Attached to Objects:** Part of object metadata
+- **Not Unique:** Multiple objects can have same labels
+- **Queryable:** Can be used to select objects
+
+#### Label Syntax
+
+**Label Format:**
+- **Key:** Alphanumeric, hyphens, underscores, dots
+- **Value:** Alphanumeric, hyphens, underscores, dots
+- **Length:** Max 63 characters each
+- **Prefix:** Optional prefix (e.g., `kubernetes.io/`, `app.kubernetes.io/`)
+
+**Valid Examples:**
+```yaml
+labels:
+  app: nginx
+  env: production
+  version: "1.0"
+  tier: frontend
+  app.kubernetes.io/name: nginx
+  app.kubernetes.io/version: "1.21"
+```
+
+**Invalid Examples:**
+```yaml
+labels:
+  app/name: nginx        # ❌ Slash not allowed in key (unless prefix)
+  app name: nginx        # ❌ Space not allowed
+  app: nginx:latest      # ❌ Colon not allowed in value
+```
+
+#### Adding Labels to Objects
+
+**Method 1: In YAML**
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx-pod
+  labels:
+    app: nginx
+    env: production
+    version: "1.0"
+    tier: frontend
+spec:
+  containers:
+  - name: nginx
+    image: nginx:latest
+```
+
+**Method 2: Using kubectl**
+
+```bash
+# Add label to existing object
+kubectl label pod nginx-pod env=production
+
+# Add multiple labels
+kubectl label pod nginx-pod env=production tier=frontend
+
+# Overwrite existing label
+kubectl label pod nginx-pod env=staging --overwrite
+
+# Remove label
+kubectl label pod nginx-pod env-
+```
+
+#### Viewing Labels
+
+```bash
+# List objects with labels
+kubectl get pods --show-labels
+
+# Show specific labels
+kubectl get pods -L app,env
+
+# Get label value
+kubectl get pod nginx-pod -o jsonpath='{.metadata.labels.app}'
+```
+
+#### Common Label Conventions
+
+**Recommended Labels (by Kubernetes):**
+
+```yaml
+labels:
+  app.kubernetes.io/name: nginx
+  app.kubernetes.io/instance: nginx-prod
+  app.kubernetes.io/version: "1.21"
+  app.kubernetes.io/component: web
+  app.kubernetes.io/part-of: myapp
+  app.kubernetes.io/managed-by: kubectl
+```
+
+**Common Custom Labels:**
+
+```yaml
+labels:
+  app: nginx
+  env: production
+  version: "1.0"
+  tier: frontend
+  team: web
+  region: us-east-1
+```
+
+#### What are Selectors?
+
+**Selectors** are expressions used to select objects based on their labels. They allow you to:
+- **Find objects** - Query objects by labels
+- **Group objects** - Operate on groups of objects
+- **Link objects** - Connect related objects (e.g., Service to Pods)
+
+**Types of Selectors:**
+1. **Equality-based** - Match exact label values
+2. **Set-based** - Match using operators (In, NotIn, Exists, DoesNotExist)
+
+#### Label Selectors
+
+**Equality-Based Selectors:**
+
+```yaml
+selector:
+  matchLabels:
+    app: nginx
+    env: production
+```
+
+**Set-Based Selectors:**
+
+```yaml
+selector:
+  matchExpressions:
+  - key: app
+    operator: In
+    values:
+    - nginx
+    - apache
+  - key: env
+    operator: NotIn
+    values:
+    - test
+    - dev
+  - key: tier
+    operator: Exists
+  - key: version
+    operator: DoesNotExist
+```
+
+**Operators:**
+- **In:** Value in list
+- **NotIn:** Value not in list
+- **Exists:** Key exists (no values needed)
+- **DoesNotExist:** Key doesn't exist (no values needed)
+
+#### Using Selectors with kubectl
+
+**Equality-Based:**
+
+```bash
+# Select pods with label app=nginx
+kubectl get pods -l app=nginx
+
+# Select pods with multiple labels
+kubectl get pods -l app=nginx,env=production
+
+# Select pods without label
+kubectl get pods -l '!env'
+
+# Select pods with env not equal to test
+kubectl get pods -l 'env!=test'
+```
+
+**Set-Based:**
+
+```bash
+# Select pods where app is nginx or apache
+kubectl get pods -l 'app in (nginx,apache)'
+
+# Select pods where env is not test or dev
+kubectl get pods -l 'env notin (test,dev)'
+
+# Select pods where tier exists
+kubectl get pods -l 'tier'
+
+# Select pods where version doesn't exist
+kubectl get pods -l '!version'
+```
+
+#### Selectors in Kubernetes Objects
+
+**ReplicaSet Selector:**
+
+```yaml
+apiVersion: apps/v1
+kind: ReplicaSet
+spec:
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx  # Must match selector
+```
+
+**Service Selector:**
+
+```yaml
+apiVersion: v1
+kind: Service
+spec:
+  selector:
+    app: nginx
+    tier: frontend
+```
+
+**Deployment Selector:**
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+spec:
+  selector:
+    matchLabels:
+      app: nginx
+    matchExpressions:
+    - key: env
+      operator: In
+      values:
+      - production
+      - staging
+```
+
+#### Label Selector Examples
+
+**Example 1: Simple Selection**
+
+```yaml
+# Pod with labels
+metadata:
+  labels:
+    app: nginx
+    env: production
+
+# Service selecting the pod
+spec:
+  selector:
+    app: nginx
+    env: production
+```
+
+**Example 2: Complex Selection**
+
+```yaml
+# Deployment with set-based selector
+spec:
+  selector:
+    matchLabels:
+      app: nginx
+    matchExpressions:
+    - key: env
+      operator: In
+      values:
+      - production
+      - staging
+    - key: version
+      operator: Exists
+```
+
+#### Label Best Practices
+
+**1. Use Standard Labels**
+
+```yaml
+labels:
+  app.kubernetes.io/name: nginx
+  app.kubernetes.io/version: "1.21"
+```
+
+**2. Use Consistent Naming**
+
+```yaml
+# ✅ Good - Consistent
+labels:
+  app: nginx
+  env: production
+
+# ⚠️ Avoid - Inconsistent
+labels:
+  application: nginx
+  environment: production
+```
+
+**3. Use Meaningful Labels**
+
+```yaml
+# ✅ Good
+labels:
+  app: frontend
+  tier: web
+  env: production
+
+# ⚠️ Avoid
+labels:
+  a: f
+  t: w
+  e: p
+```
+
+**4. Don't Over-Label**
+
+```yaml
+# ✅ Good - Essential labels
+labels:
+  app: nginx
+  env: production
+
+# ⚠️ Avoid - Too many labels
+labels:
+  app: nginx
+  env: production
+  team: web
+  region: us-east-1
+  zone: us-east-1a
+  instance: nginx-1
+  # ... many more
+```
+
+**5. Use Labels for Organization**
+
+```yaml
+# Organize by application
+labels:
+  app: nginx
+
+# Organize by environment
+labels:
+  env: production
+
+# Organize by team
+labels:
+  team: frontend
+```
+
+#### Label Selector Matching
+
+**Important Rules:**
+
+1. **Selector must match labels** - Objects selected must have matching labels
+2. **Template labels must match selector** - In ReplicaSet/Deployment, pod template labels must match selector
+3. **Service selector matches pod labels** - Service selects pods by matching labels
+
+**Example - ReplicaSet:**
+
+```yaml
+spec:
+  selector:
+    matchLabels:
+      app: nginx        # Selector
+  template:
+    metadata:
+      labels:
+        app: nginx      # Must match selector
+```
+
+#### Label Selector Commands
+
+```bash
+# Get objects by label
+kubectl get pods -l app=nginx
+kubectl get pods -l app=nginx,env=production
+
+# Get objects without label
+kubectl get pods -l '!env'
+
+# Get objects with label not equal
+kubectl get pods -l 'env!=test'
+
+# Get objects with set-based selector
+kubectl get pods -l 'app in (nginx,apache)'
+kubectl get pods -l 'env notin (test,dev)'
+kubectl get pods -l 'tier'
+kubectl get pods -l '!version'
+
+# Add label
+kubectl label pod nginx-pod env=production
+
+# Remove label
+kubectl label pod nginx-pod env-
+
+# Update label
+kubectl label pod nginx-pod env=staging --overwrite
+```
+
+#### Label Selector Use Cases
+
+**1. Service to Pod Selection**
+
+```yaml
+# Service
+spec:
+  selector:
+    app: nginx
+
+# Pods (selected by service)
+metadata:
+  labels:
+    app: nginx
+```
+
+**2. Deployment to Pod Selection**
+
+```yaml
+# Deployment
+spec:
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+```
+
+**3. Filtering and Querying**
+
+```bash
+# Get all production pods
+kubectl get pods -l env=production
+
+# Get all frontend pods
+kubectl get pods -l tier=frontend
+
+# Get pods in production or staging
+kubectl get pods -l 'env in (production,staging)'
+```
+
+#### Key Takeaways
+
+1. **Labels are key-value pairs** - Attached to objects for organization
+2. **Selectors match labels** - Used to find and select objects
+3. **Equality and set-based** - Two types of selectors
+4. **Template labels must match selector** - In ReplicaSet/Deployment
+5. **Use standard labels** - Follow Kubernetes conventions
+6. **Be consistent** - Use consistent label names across objects
+7. **Labels enable selection** - Services, Deployments use selectors
+8. **Labels are queryable** - Use with kubectl -l flag
+
+Labels and selectors are fundamental to how Kubernetes organizes and connects objects. Understanding them is essential for working with Kubernetes effectively.
 
 ---
 
