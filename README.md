@@ -63,6 +63,13 @@
     - [Kubernetes Monitoring](./docs/11-logging-monitoring.md#kubernetes-monitoring)
     - [Observability Stack](./docs/11-logging-monitoring.md#observability-stack)
 
+12. [Custom Resource Definitions (CRDs)](./docs/12-crds.md)
+    - [What are CRDs?](./docs/12-crds.md#what-are-crds)
+    - [Creating CRDs](./docs/12-crds.md#creating-crds)
+    - [CRD Validation](./docs/12-crds.md#crd-validation)
+    - [CRD Controllers](./docs/12-crds.md#crd-controllers)
+    - [Operator Pattern](./docs/12-crds.md#operator-pattern)
+
 ---
 
 ## Quick Navigation
@@ -91,6 +98,7 @@ Practice what you learn with step-by-step tutorials:
 8. **[Advanced Topics Tutorial](./tutorials/08-advanced/README.md)** - RBAC and Node Affinity
 9. **[Logging and Monitoring Tutorial](./tutorials/09-logging-monitoring/README.md)** - Log Collection and Monitoring Setup
 10. **[Kubernetes Dashboard Tutorial](./tutorials/10-kubernetes-dashboard/README.md)** - Install and Use Kubernetes Dashboard
+11. **[CRDs Tutorial](./tutorials/11-crds/README.md)** - Create and Use Custom Resource Definitions
 
 Each tutorial includes:
 - Step-by-step instructions
@@ -116,7 +124,8 @@ Kubernetes/
 │   ├── 08-resource-management.md
 │   ├── 09-autoscaling.md
 │   ├── 10-advanced.md
-│   └── 11-logging-monitoring.md
+│   ├── 11-logging-monitoring.md
+│   └── 12-crds.md
 ├── tutorials/
 │   ├── 01-core-concepts/
 │   │   ├── README.md
@@ -171,6 +180,11 @@ Kubernetes/
 │       ├── serviceaccount.yml
 │       ├── clusterrolebinding.yml
 │       └── admin-user.yml
+│   └── 11-crds/
+│       ├── README.md
+│       ├── website-crd.yaml
+│       ├── my-website.yaml
+│       └── websites.yaml
 ├── nginx/ (example YAML files)
 ├── mysql/ (example YAML files)
 └── apache/ (example YAML files)

@@ -1,0 +1,33 @@
+apiVersion: example.com/v1
+kind: Website
+metadata:
+  name: blog
+  namespace: default
+spec:
+  name: blog
+  image: wordpress:latest
+  replicas: 2
+  port: 80
+---
+apiVersion: example.com/v1
+kind: Website
+metadata:
+  name: shop
+  namespace: default
+spec:
+  name: shop
+  image: nginx:latest
+  replicas: 3
+  port: 8080
+---
+apiVersion: example.com/v1
+kind: Website
+metadata:
+  name: api
+  namespace: default
+spec:
+  name: api
+  image: node:18
+  replicas: 1
+  port: 3000
+

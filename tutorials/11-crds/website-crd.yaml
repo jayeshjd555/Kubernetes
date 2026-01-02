@@ -1,0 +1,57 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: websites.example.com
+spec:
+  group: example.com
+  versions:
+    - name: v1
+      served: true
+      storage: true
+      subresources:
+        status: {}
+      schema:
+        openAPIV3Schema:
+          type: object
+          properties:
+            spec:
+              type: object
+              required: ["name", "image"]
+              properties:
+                name:
+                  type: string
+                  description: "Name of the website"
+                image:
+                  type: string
+                  description: "Container image for the website"
+                replicas:
+                  type: integer
+                  minimum: 1
+                  maximum: 10
+                  default: 1
+                  description: "Number of replicas"
+                port:
+                  type: integer
+                  minimum: 1
+                  maximum: 65535
+                  default: 80
+                  description: "Port number for the website"
+            status:
+              type: object
+              properties:
+                phase:
+                  type: string
+                  enum: ["Pending", "Running", "Failed"]
+                message:
+                  type: string
+                replicas:
+                  type: integer
+  scope: Namespaced
+  names:
+    plural: websites
+    singular: website
+    kind: Website
+    shortNames:
+      - web
+      - ws
+

@@ -1,0 +1,11 @@
+apiVersion: example.com/v1
+kind: Website
+metadata:
+  name: my-blog
+  namespace: default
+spec:
+  name: my-blog
+  image: nginx:latest
+  replicas: 2
+  port: 80
+
