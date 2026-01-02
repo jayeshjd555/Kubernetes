@@ -35,6 +35,9 @@
 
 ---
 
+<details>
+<summary><h2>Introduction & Overview of Kubernetes Concepts</h2></summary>
+
 ## Introduction & Overview of Kubernetes Concepts
 
 ### What is Kubernetes?
@@ -70,7 +73,12 @@
 - It heals failures automatically
 - It handles networking automatically
 
+</details>
+
 ---
+
+<details>
+<summary><h2>Kubernetes History</h2></summary>
 
 ## Kubernetes History
 
@@ -129,6 +137,9 @@
 - **Symbolism:** Represents steering/guiding containerized applications
 
 ---
+
+<details>
+<summary><h2>Why Should We Learn Kubernetes?</h2></summary>
 
 ## Why Should We Learn Kubernetes?
 
@@ -196,7 +207,12 @@
 ✅ **Site Reliability Engineers (SRE)** - For ensuring reliability
 ✅ **Anyone in Tech** - Valuable skill for career growth
 
+</details>
+
 ---
+
+<details>
+<summary><h2>Monolithic vs Microservices Architecture</h2></summary>
 
 ## Monolithic vs Microservices Architecture
 
@@ -274,7 +290,12 @@ Kubernetes Cluster
 3. **Kubernetes** makes managing microservices much easier
 4. **Choose architecture** based on your specific needs and scale
 
+</details>
+
 ---
+
+<details>
+<summary><h2>Kubernetes Architecture</h2></summary>
 
 ## Kubernetes Architecture
 
@@ -612,7 +633,12 @@ Control Plane (HA Setup)
    - Monitor worker node health
    - Monitor etcd performance
 
+</details>
+
 ---
+
+<details>
+<summary><h2>Kubernetes Setup</h2></summary>
 
 ## Kubernetes Setup
 
@@ -846,7 +872,12 @@ Cloud providers offer fully managed Kubernetes services that handle cluster setu
 
 Each method has its place in the Kubernetes ecosystem, and you may use different methods for different purposes.
 
+</details>
+
 ---
+
+<details>
+<summary><h2>Kubernetes Concepts</h2></summary>
 
 ## Kubernetes Concepts
 
@@ -5566,7 +5597,12 @@ CronJobs are essential for running periodic tasks, scheduled backups, and recurr
 - **Job:** One-time tasks, batch processing, manual execution
 - **CronJob:** Scheduled tasks, periodic backups, recurring jobs
 
+</details>
+
 ---
+
+<details>
+<summary><h2>Storage</h2></summary>
 
 ## Storage
 
@@ -6266,7 +6302,12 @@ kubectl get pvc local-pvc -n nginx
 5. **Monitor storage** - Check PV/PVC status
 6. **Clean up** - Delete unused PVCs and PVs
 
+</details>
+
 ---
+
+<details>
+<summary><h2>Services</h2></summary>
 
 ## Services
 
@@ -6751,7 +6792,12 @@ kubectl get svc nginx-service -n nginx -o jsonpath='{.spec.clusterIP}'
 
 Services are essential for networking in Kubernetes. They provide the stable, reliable way to access your applications regardless of Pod changes.
 
+</details>
+
 ---
+
+<details>
+<summary><h2>Ingress</h2></summary>
 
 ## Ingress
 
@@ -7564,7 +7610,12 @@ kubectl get ingress nginx-notes-ingress -n nginx
 
 Ingress is essential for managing external HTTP/HTTPS access to your Kubernetes services. It provides a powerful, flexible way to route traffic based on paths and hostnames while handling SSL/TLS termination.
 
+</details>
+
 ---
+
+<details>
+<summary><h2>ConfigMap and Secrets</h2></summary>
 
 ## ConfigMap and Secrets
 
@@ -8261,7 +8312,12 @@ kubectl get secret mysql-secret -n mysql -o jsonpath='{.data.MYSQL_ROOT_PASSWORD
 
 Both ConfigMap and Secrets are essential for managing configuration and sensitive data in Kubernetes applications.
 
+</details>
+
 ---
+
+<details>
+<summary><h2>Resource Quotas and Limits</h2></summary>
 
 ## Resource Quotas and Limits
 
@@ -8894,7 +8950,12 @@ spec:
 
 Resource Quotas and Limits are essential for managing resources in Kubernetes clusters, ensuring fair allocation and preventing resource exhaustion.
 
+</details>
+
 ---
+
+<details>
+<summary><h2>Probes</h2></summary>
 
 ## Probes
 
@@ -9710,3 +9771,5 @@ spec:
 10. **Startup probe disables others** - Until it succeeds
 
 Probes are essential for maintaining application health and reliability in Kubernetes. They enable self-healing and intelligent traffic management.
+
+</details>
