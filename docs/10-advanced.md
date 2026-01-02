@@ -446,3 +446,762 @@ kubectl get pod <pod-name> -o yaml
 Taints and Tolerations are essential for controlling pod placement and ensuring specialized workloads run on appropriate nodes.
 
 </details>
+
+---
+
+<details>
+<summary><h2>Node Affinity</h2></summary>
+
+## Node Affinity
+
+**Node Affinity** is a Kubernetes feature that allows you to constrain which nodes your Pod can be scheduled on based on node labels. It provides more flexible and powerful scheduling rules compared to node selectors.
+
+### What is Node Affinity?
+
+**Simple Explanation:**
+Node Affinity lets you tell Kubernetes **which nodes** your Pod should (or shouldn't) be scheduled on based on node characteristics like zone, instance type, or custom labels.
+
+**Analogy:**
+Think of Node Affinity as **preferences for job placement**:
+- **Required Affinity** = "Must work in New York office" (hard requirement)
+- **Preferred Affinity** = "Would prefer to work in New York office" (soft preference)
+- **Anti-Affinity** = "Don't want to work in New York office" (avoidance)
+
+**Key Difference:**
+- **Node Selector:** Simple key-value matching (hard requirement only)
+- **Node Affinity:** Flexible rules with operators, multiple expressions, and soft/hard requirements
+
+### Node Affinity Diagram
+
+```mermaid
+graph TB
+    Pod1[Pod 1<br/>Required Affinity<br/>zone=us-east-1]
+    Pod2[Pod 2<br/>Preferred Affinity<br/>instance-type=large]
+    Pod3[Pod 3<br/>Anti-Affinity<br/>zone=us-west-1]
+    
+    Node1[Node 1<br/>zone=us-east-1<br/>instance-type=small]
+    Node2[Node 2<br/>zone=us-east-1<br/>instance-type=large]
+    Node3[Node 3<br/>zone=us-west-1<br/>instance-type=large]
+    
+    Pod1 -->|Must Schedule| Node1
+    Pod1 -->|Must Schedule| Node2
+    Pod1 -.->|Cannot Schedule| Node3
+    
+    Pod2 -->|Prefer| Node2
+    Pod2 -->|Can Schedule| Node1
+    Pod2 -->|Can Schedule| Node3
+    
+    Pod3 -->|Can Schedule| Node1
+    Pod3 -->|Can Schedule| Node2
+    Pod3 -.->|Avoid| Node3
+    
+    style Pod1 fill:#326ce5,color:#fff
+    style Pod2 fill:#00d4aa,color:#fff
+    style Pod3 fill:#f4a261,color:#000
+    style Node2 fill:#90ee90,color:#000
+```
+
+### Types of Node Affinity
+
+**1. Required During Scheduling (requiredDuringSchedulingIgnoredDuringExecution)**
+- **Hard requirement** - Pod must match to be scheduled
+- If no nodes match, Pod stays in Pending state
+- Also called "hard affinity"
+
+**2. Preferred During Scheduling (preferredDuringSchedulingIgnoredDuringExecution)**
+- **Soft preference** - Scheduler tries to match but not required
+- If no nodes match, Pod can still be scheduled elsewhere
+- Also called "soft affinity"
+
+**3. Required During Execution (requiredDuringSchedulingRequiredDuringExecution)**
+- **Hard requirement** that's enforced during execution
+- Pods can be evicted if node labels change
+- Used for critical placement requirements
+
+### Node Affinity Structure
+
+**Basic Structure:**
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: my-pod
+spec:
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: zone
+            operator: In
+            values:
+            - us-east-1
+            - us-east-2
+      preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        preference:
+          matchExpressions:
+          - key: instance-type
+            operator: In
+            values:
+            - large
+  containers:
+  - name: app
+    image: nginx:latest
+```
+
+### Match Expressions
+
+**Match Expressions** define the rules for node selection.
+
+**Structure:**
+```yaml
+matchExpressions:
+- key: <label-key>
+  operator: <operator>
+  values:
+  - <value1>
+  - <value2>
+```
+
+**Operators:**
+
+**1. In:**
+- Node label value must be in the specified list
+- Example: `zone` must be `us-east-1` OR `us-east-2`
+
+**2. NotIn:**
+- Node label value must NOT be in the specified list
+- Example: `zone` must NOT be `us-west-1`
+
+**3. Exists:**
+- Node must have the label key (value doesn't matter)
+- No values field needed
+
+**4. DoesNotExist:**
+- Node must NOT have the label key
+- No values field needed
+
+**5. Gt (Greater Than):**
+- Node label value must be greater than specified value
+- Works with numeric values
+
+**6. Lt (Less Than):**
+- Node label value must be less than specified value
+- Works with numeric values
+
+### Required Node Affinity
+
+**Required Affinity** is a hard requirement - Pod will only be scheduled on nodes that match.
+
+**Example: Pod must be in us-east-1 zone:**
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: required-affinity-pod
+spec:
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: zone
+            operator: In
+            values:
+            - us-east-1
+  containers:
+  - name: app
+    image: nginx:latest
+```
+
+**Example: Pod must NOT be in us-west-1:**
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: anti-affinity-pod
+spec:
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: zone
+            operator: NotIn
+            values:
+            - us-west-1
+  containers:
+  - name: app
+    image: nginx:latest
+```
+
+**Example: Multiple Requirements (AND logic):**
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: multi-requirement-pod
+spec:
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: zone
+            operator: In
+            values:
+            - us-east-1
+          - key: instance-type
+            operator: In
+            values:
+            - large
+            - xlarge
+  containers:
+  - name: app
+    image: nginx:latest
+```
+
+**Example: Multiple nodeSelectorTerms (OR logic):**
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: or-logic-pod
+spec:
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: zone
+            operator: In
+            values:
+            - us-east-1
+        - matchExpressions:
+          - key: zone
+            operator: In
+            values:
+            - us-east-2
+  containers:
+  - name: app
+    image: nginx:latest
+```
+
+### Preferred Node Affinity
+
+**Preferred Affinity** is a soft preference - Scheduler tries to match but Pod can be scheduled elsewhere if needed.
+
+**Structure:**
+```yaml
+preferredDuringSchedulingIgnoredDuringExecution:
+- weight: <1-100>
+  preference:
+    matchExpressions:
+    - key: <label-key>
+      operator: <operator>
+      values:
+      - <value>
+```
+
+**Weight:**
+- Range: 1-100
+- Higher weight = stronger preference
+- Used when multiple preferred rules exist
+
+**Example: Prefer large instances:**
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: preferred-affinity-pod
+spec:
+  affinity:
+    nodeAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        preference:
+          matchExpressions:
+          - key: instance-type
+            operator: In
+            values:
+            - large
+            - xlarge
+  containers:
+  - name: app
+    image: nginx:latest
+```
+
+**Example: Multiple Preferences:**
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: multi-preference-pod
+spec:
+  affinity:
+    nodeAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        preference:
+          matchExpressions:
+          - key: zone
+            operator: In
+            values:
+            - us-east-1
+      - weight: 50
+        preference:
+          matchExpressions:
+          - key: instance-type
+            operator: In
+            values:
+            - large
+  containers:
+  - name: app
+    image: nginx:latest
+```
+
+### Combining Required and Preferred
+
+You can combine both required and preferred affinities:
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: combined-affinity-pod
+spec:
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: zone
+            operator: In
+            values:
+            - us-east-1
+            - us-east-2
+      preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        preference:
+          matchExpressions:
+          - key: instance-type
+            operator: In
+            values:
+            - large
+      - weight: 50
+        preference:
+          matchExpressions:
+          - key: disk-type
+            operator: In
+            values:
+            - ssd
+  containers:
+  - name: app
+    image: nginx:latest
+```
+
+### Node Affinity in Deployments
+
+**Example: Deployment with Node Affinity:**
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deployment
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: zone
+                operator: In
+                values:
+                - us-east-1
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            preference:
+              matchExpressions:
+              - key: instance-type
+                operator: In
+                values:
+                - large
+      containers:
+      - name: nginx
+        image: nginx:latest
+```
+
+### Common Use Cases
+
+**1. Zone-Based Placement:**
+```yaml
+affinity:
+  nodeAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: zone
+          operator: In
+          values:
+          - us-east-1
+```
+
+**2. Instance Type Preference:**
+```yaml
+affinity:
+  nodeAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+    - weight: 100
+      preference:
+        matchExpressions:
+        - key: instance-type
+          operator: In
+          values:
+          - large
+          - xlarge
+```
+
+**3. Avoiding Specific Nodes:**
+```yaml
+affinity:
+  nodeAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: maintenance
+          operator: DoesNotExist
+```
+
+**4. GPU Node Selection:**
+```yaml
+affinity:
+  nodeAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: accelerator
+          operator: In
+          values:
+          - nvidia-tesla-k80
+          - nvidia-tesla-v100
+```
+
+**5. Cost Optimization:**
+```yaml
+affinity:
+  nodeAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+    - weight: 100
+      preference:
+        matchExpressions:
+        - key: cost-tier
+          operator: In
+          values:
+          - low
+```
+
+### Node Affinity vs Node Selector
+
+| Feature | Node Selector | Node Affinity |
+|---------|---------------|---------------|
+| **Complexity** | Simple | More flexible |
+| **Operators** | Only equality | In, NotIn, Exists, etc. |
+| **Soft Requirements** | No | Yes (preferred) |
+| **Multiple Rules** | Limited | Yes (AND/OR logic) |
+| **Use Case** | Simple matching | Complex scheduling |
+
+**When to Use Node Selector:**
+- Simple key-value matching
+- Single requirement
+- Hard requirement only
+
+**When to Use Node Affinity:**
+- Complex matching rules
+- Multiple requirements
+- Soft preferences needed
+- Need operators (In, NotIn, etc.)
+
+### Node Affinity Operators Examples
+
+**1. In Operator:**
+```yaml
+matchExpressions:
+- key: zone
+  operator: In
+  values:
+  - us-east-1
+  - us-east-2
+  - us-west-1
+```
+
+**2. NotIn Operator:**
+```yaml
+matchExpressions:
+- key: zone
+  operator: NotIn
+  values:
+  - us-west-1
+```
+
+**3. Exists Operator:**
+```yaml
+matchExpressions:
+- key: gpu
+  operator: Exists
+  # No values needed
+```
+
+**4. DoesNotExist Operator:**
+```yaml
+matchExpressions:
+- key: maintenance
+  operator: DoesNotExist
+  # No values needed
+```
+
+**5. Gt Operator (Greater Than):**
+```yaml
+matchExpressions:
+- key: cpu-count
+  operator: Gt
+  values:
+  - "4"
+```
+
+**6. Lt Operator (Less Than):**
+```yaml
+matchExpressions:
+- key: memory-size
+  operator: Lt
+  values:
+  - "16"
+```
+
+### Labeling Nodes
+
+**Before using Node Affinity, label your nodes:**
+```bash
+# Label a node
+kubectl label nodes <node-name> zone=us-east-1
+
+# Label with instance type
+kubectl label nodes <node-name> instance-type=large
+
+# Label with custom key
+kubectl label nodes <node-name> gpu=nvidia-tesla-k80
+
+# View node labels
+kubectl get nodes --show-labels
+
+# View specific node labels
+kubectl describe node <node-name>
+```
+
+**Example: Labeling Multiple Nodes:**
+```bash
+# Label nodes by zone
+kubectl label nodes node1 zone=us-east-1
+kubectl label nodes node2 zone=us-east-1
+kubectl label nodes node3 zone=us-west-1
+
+# Label nodes by instance type
+kubectl label nodes node1 instance-type=small
+kubectl label nodes node2 instance-type=large
+kubectl label nodes node3 instance-type=large
+```
+
+### Node Affinity Best Practices
+
+**1. Use Required for Critical Placement:**
+- Use required affinity for critical requirements
+- Example: Must be in specific zone for compliance
+
+**2. Use Preferred for Optimization:**
+- Use preferred affinity for optimization
+- Example: Prefer large instances but not required
+
+**3. Combine with Node Labels:**
+- Label nodes appropriately
+- Use meaningful label names
+- Document label meanings
+
+**4. Test Affinity Rules:**
+- Test required rules to ensure Pods can schedule
+- Verify preferred rules work as expected
+- Check for Pending Pods
+
+**5. Monitor Scheduling:**
+- Monitor Pod scheduling events
+- Check for Pending Pods due to affinity
+- Adjust rules if needed
+
+**6. Use Weights Wisely:**
+- Higher weights for more important preferences
+- Balance multiple preferences
+- Test weight combinations
+
+**7. Document Affinity Rules:**
+- Document why affinity rules exist
+- Keep track of node labels
+- Update documentation when labels change
+
+### Troubleshooting
+
+**Pod Stuck in Pending:**
+```bash
+# Check Pod events
+kubectl describe pod <pod-name>
+
+# Check node labels
+kubectl get nodes --show-labels
+
+# Check Pod affinity rules
+kubectl get pod <pod-name> -o yaml | grep -A 20 affinity
+```
+
+**Pod Scheduled on Wrong Node:**
+```bash
+# Verify node labels match affinity
+kubectl describe node <node-name>
+
+# Check Pod affinity configuration
+kubectl get pod <pod-name> -o yaml | grep -A 20 affinity
+
+# Check scheduler events
+kubectl get events --field-selector involvedObject.name=<pod-name>
+```
+
+**Preferred Affinity Not Working:**
+```bash
+# Check if nodes with preference exist
+kubectl get nodes -l <label-key>=<label-value>
+
+# Verify weight values
+kubectl get pod <pod-name> -o yaml | grep -A 10 preferred
+
+# Check if other constraints prevent scheduling
+kubectl describe pod <pod-name>
+```
+
+### Node Affinity Examples
+
+#### Example 1: Zone-Based Deployment
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: zone-deployment
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: web
+  template:
+    metadata:
+      labels:
+        app: web
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: zone
+                operator: In
+                values:
+                - us-east-1
+      containers:
+      - name: web
+        image: nginx:latest
+```
+
+#### Example 2: GPU Workload
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: gpu-pod
+spec:
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: accelerator
+            operator: In
+            values:
+            - nvidia-tesla-k80
+            - nvidia-tesla-v100
+          - key: gpu-count
+            operator: Gt
+            values:
+            - "1"
+  containers:
+  - name: gpu-app
+    image: nvidia/cuda:latest
+```
+
+#### Example 3: Cost-Optimized Deployment
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cost-optimized
+spec:
+  replicas: 5
+  selector:
+    matchLabels:
+      app: app
+  template:
+    metadata:
+      labels:
+        app: app
+    spec:
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            preference:
+              matchExpressions:
+              - key: cost-tier
+                operator: In
+                values:
+                - low
+          - weight: 50
+            preference:
+              matchExpressions:
+              - key: instance-type
+                operator: In
+                values:
+                - small
+      containers:
+      - name: app
+        image: nginx:latest
+```
+
+### Key Takeaways
+
+1. **Node Affinity controls pod placement** - Based on node labels
+2. **Required affinity is hard requirement** - Pod must match to schedule
+3. **Preferred affinity is soft preference** - Scheduler tries to match
+4. **Multiple operators available** - In, NotIn, Exists, DoesNotExist, Gt, Lt
+5. **More flexible than node selector** - Supports complex rules
+6. **Combine required and preferred** - For optimal scheduling
+7. **Label nodes appropriately** - Before using affinity
+8. **Test affinity rules** - Ensure Pods can schedule
+9. **Monitor scheduling** - Check for Pending Pods
+10. **Use weights for preferences** - Higher weight = stronger preference
+
+Node Affinity provides powerful and flexible control over pod scheduling, allowing you to optimize resource usage, comply with requirements, and ensure workloads run on appropriate nodes.
+
+</details>
