@@ -10733,12 +10733,12 @@ Result: Scale up to 4 Pods
 ### HPA Architecture Diagram
 
 ```mermaid
-graph LR
-    A[Metrics Server] --> B[HPA Controller]
-    C[Prometheus] --> B
-    B --> D[Deployment]
-    D --> E[ReplicaSet]
-    E --> F[Pods]
+graph TB
+    MS[Metrics Server] --> HPA[HPA Controller]
+    PM[Prometheus] --> HPA
+    HPA --> DEP[Deployment]
+    DEP --> RS[ReplicaSet]
+    RS --> PODS[Pods]
 ```
 
 ### HPA YAML Structure
@@ -11023,14 +11023,14 @@ Think of VPA as a **smart resource allocator**:
 ### VPA Architecture Diagram
 
 ```mermaid
-graph LR
-    A[Historical Metrics] --> B[Recommender]
-    B --> C[VPA Controller]
-    C --> D[Updater]
-    C --> E[Admission Controller]
-    D --> F[Pod 1]
-    D --> G[Pod 2]
-    E --> H[Pod 3]
+graph TB
+    HIST[Historical Metrics] --> REC[Recommender]
+    REC --> VPA[VPA Controller]
+    VPA --> UPD[Updater]
+    VPA --> AC[Admission Controller]
+    UPD --> POD1[Pod 1]
+    UPD --> POD2[Pod 2]
+    AC --> POD3[Pod 3]
 ```
 
 ### VPA YAML Structure
@@ -11291,16 +11291,16 @@ Think of KEDA as an **event-driven staffing manager**:
 ### KEDA Architecture Diagram
 
 ```mermaid
-graph LR
-    A[Message Queue] --> B[Scalers]
-    C[Database] --> B
-    D[Cloud Services] --> B
-    B --> E[Metrics Adapter]
-    F[ScaledObject] --> G[KEDA Controller]
-    G --> B
-    E --> H[HPA]
-    H --> I[Deployment]
-    I --> J[Pods]
+graph TB
+    QUEUE[Message Queue] --> SCALER[Scalers]
+    DB[Database] --> SCALER
+    CLOUD[Cloud Services] --> SCALER
+    SCALER --> MA[Metrics Adapter]
+    SO[ScaledObject] --> KEDA[KEDA Controller]
+    KEDA --> SCALER
+    MA --> HPA[HPA]
+    HPA --> DEP[Deployment]
+    DEP --> PODS[Pods]
 ```
 
 ### KEDA ScaledObject YAML Structure
@@ -11570,16 +11570,16 @@ Think of Cluster Autoscaler as an **automatic infrastructure manager**:
 ### Cluster Autoscaler Architecture Diagram
 
 ```mermaid
-graph LR
-    A[Pending Pods] --> B[CA Controller]
-    C[Scheduler] --> D[Monitor]
-    D --> B
-    B --> E[Decision Engine]
-    E --> F[Node Group]
-    F --> G[New Node]
-    E --> H[Old Node]
-    G --> I[Node 1]
-    H --> J[Node 2]
+graph TB
+    PENDING[Pending Pods] --> CA[CA Controller]
+    SCHED[Scheduler] --> MON[Monitor]
+    MON --> CA
+    CA --> DEC[Decision Engine]
+    DEC --> NG[Node Group]
+    NG --> NEW[New Node]
+    DEC --> OLD[Old Node]
+    NEW --> NODE1[Node 1]
+    OLD --> NODE2[Node 2]
 ```
 
 ### Cluster Autoscaler Configuration
