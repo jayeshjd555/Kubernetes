@@ -76,6 +76,13 @@
     - [Helm vs Kustomize](https://github.com/jayeshjd555/Kubernetes/blob/main/docs/13-package-management.md#helm-vs-kustomize)
     - [Other Package Management Tools](https://github.com/jayeshjd555/Kubernetes/blob/main/docs/13-package-management.md#other-package-management-tools)
 
+14. [Service Mesh](https://github.com/jayeshjd555/Kubernetes/blob/main/docs/14-service-mesh.md)
+    - [What is a Service Mesh?](https://github.com/jayeshjd555/Kubernetes/blob/main/docs/14-service-mesh.md#what-is-a-service-mesh)
+    - [Istio - The Most Popular Service Mesh](https://github.com/jayeshjd555/Kubernetes/blob/main/docs/14-service-mesh.md#istio---the-most-popular-service-mesh)
+    - [Linkerd - Lightweight Service Mesh](https://github.com/jayeshjd555/Kubernetes/blob/main/docs/14-service-mesh.md#linkerd---lightweight-service-mesh)
+    - [Other Service Mesh Solutions](https://github.com/jayeshjd555/Kubernetes/blob/main/docs/14-service-mesh.md#other-service-mesh-solutions)
+    - [Service Mesh Comparison](https://github.com/jayeshjd555/Kubernetes/blob/main/docs/14-service-mesh.md#service-mesh-comparison)
+
 ---
 
 ## Quick Navigation
@@ -107,6 +114,7 @@ Practice what you learn with step-by-step tutorials:
 11. **[CRDs Tutorial](https://github.com/jayeshjd555/Kubernetes/blob/main/tutorials/11-crds/README.md)** - Create and Use Custom Resource Definitions
 12. **[Helm Tutorial](https://github.com/jayeshjd555/Kubernetes/blob/main/tutorials/12-helm/README.md)** - Create and Use Helm Charts
 13. **[Kustomize Tutorial](https://github.com/jayeshjd555/Kubernetes/blob/main/tutorials/13-kustomize/README.md)** - Manage Configurations with Kustomize
+14. **[Service Mesh Tutorial](https://github.com/jayeshjd555/Kubernetes/blob/main/tutorials/14-service-mesh/README.md)** - Set Up and Use Istio Service Mesh
 
 Each tutorial includes:
 - Step-by-step instructions
@@ -134,7 +142,8 @@ Kubernetes/
 │   ├── 10-advanced.md
 │   ├── 11-logging-monitoring.md
 │   ├── 12-crds.md
-│   └── 13-package-management.md
+│   ├── 13-package-management.md
+│   └── 14-service-mesh.md
 ├── tutorials/
 │   ├── 01-core-concepts/
 │   │   ├── README.md
@@ -197,6 +206,8 @@ Kubernetes/
 │   └── 12-helm/
 │       └── README.md
 │   └── 13-kustomize/
+│       └── README.md
+│   └── 14-service-mesh/
 │       └── README.md
 ├── nginx/ (example YAML files)
 ├── mysql/ (example YAML files)
