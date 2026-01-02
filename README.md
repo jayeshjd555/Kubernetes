@@ -10733,17 +10733,12 @@ Result: Scale up to 4 Pods
 ### HPA Architecture Diagram
 
 ```mermaid
-flowchart TB
-    MS[Metrics Server] --> HPA[HPA Controller]
-    PM[Prometheus] --> HPA
-    HPA --> Calc[Calculate Replicas]
-    Calc --> Dep[Deployment]
-    Dep --> RS[ReplicaSet]
-    RS --> Pods[Pods]
-    
-    style HPA fill:#326ce5,color:#fff
-    style Dep fill:#00d4aa,color:#fff
-    style Pods fill:#f4a261,color:#000
+graph LR
+    A[Metrics Server] --> B[HPA Controller]
+    C[Prometheus] --> B
+    B --> D[Deployment]
+    D --> E[ReplicaSet]
+    E --> F[Pods]
 ```
 
 ### HPA YAML Structure
@@ -11028,18 +11023,14 @@ Think of VPA as a **smart resource allocator**:
 ### VPA Architecture Diagram
 
 ```mermaid
-flowchart TB
-    Hist[Historical Metrics] --> Rec[Recommender]
-    Rec --> VPACtrl[VPA Controller]
-    VPACtrl --> Upd[Updater]
-    VPACtrl --> AC[Admission Controller]
-    Upd --> Pod1[Pod 1]
-    Upd --> Pod2[Pod 2]
-    AC --> Pod3[Pod 3]
-    
-    style VPACtrl fill:#326ce5,color:#fff
-    style Rec fill:#00d4aa,color:#fff
-    style Pod3 fill:#f4a261,color:#000
+graph LR
+    A[Historical Metrics] --> B[Recommender]
+    B --> C[VPA Controller]
+    C --> D[Updater]
+    C --> E[Admission Controller]
+    D --> F[Pod 1]
+    D --> G[Pod 2]
+    E --> H[Pod 3]
 ```
 
 ### VPA YAML Structure
@@ -11300,20 +11291,16 @@ Think of KEDA as an **event-driven staffing manager**:
 ### KEDA Architecture Diagram
 
 ```mermaid
-flowchart TB
-    Queue[Message Queue] --> Scaler[Scalers]
-    DB[Database] --> Scaler
-    Cloud[Cloud Services] --> Scaler
-    Scaler --> MA[Metrics Adapter]
-    SO[ScaledObject] --> KEDACtrl[KEDA Controller]
-    KEDACtrl --> Scaler
-    MA --> HPA[HPA]
-    HPA --> Dep[Deployment]
-    Dep --> Pods[Pods]
-    
-    style KEDACtrl fill:#326ce5,color:#fff
-    style HPA fill:#00d4aa,color:#fff
-    style Pods fill:#f4a261,color:#000
+graph LR
+    A[Message Queue] --> B[Scalers]
+    C[Database] --> B
+    D[Cloud Services] --> B
+    B --> E[Metrics Adapter]
+    F[ScaledObject] --> G[KEDA Controller]
+    G --> B
+    E --> H[HPA]
+    H --> I[Deployment]
+    I --> J[Pods]
 ```
 
 ### KEDA ScaledObject YAML Structure
@@ -11583,20 +11570,16 @@ Think of Cluster Autoscaler as an **automatic infrastructure manager**:
 ### Cluster Autoscaler Architecture Diagram
 
 ```mermaid
-flowchart TB
-    Pending[Pending Pods] --> CA[CA Controller]
-    Scheduler[Scheduler] --> Monitor[Monitor]
-    Monitor --> CA
-    CA --> Decision[Decision Engine]
-    Decision --> NodeGroup[Node Group]
-    NodeGroup --> NewNode[New Node]
-    Decision --> OldNode[Old Node]
-    NewNode --> Node1[Node 1]
-    OldNode --> Node2[Node 2]
-    
-    style CA fill:#326ce5,color:#fff
-    style NodeGroup fill:#00d4aa,color:#fff
-    style NewNode fill:#f4a261,color:#000
+graph LR
+    A[Pending Pods] --> B[CA Controller]
+    C[Scheduler] --> D[Monitor]
+    D --> B
+    B --> E[Decision Engine]
+    E --> F[Node Group]
+    F --> G[New Node]
+    E --> H[Old Node]
+    G --> I[Node 1]
+    H --> J[Node 2]
 ```
 
 ### Cluster Autoscaler Configuration
