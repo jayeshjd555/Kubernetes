@@ -10741,11 +10741,11 @@ graph TB
     RS[ReplicaSet]
     PODS[Pods<br/>Application Containers]
     
-    MS -->|Provides Metrics| HPA
-    PM -->|Provides Metrics| HPA
-    HPA -->|Scales| DEP
-    DEP -->|Manages| RS
-    RS -->|Creates| PODS
+    MS --> HPA
+    PM --> HPA
+    HPA --> DEP
+    DEP --> RS
+    RS --> PODS
     
     style HPA fill:#326ce5,color:#fff
     style DEP fill:#00d4aa,color:#fff
@@ -11044,13 +11044,13 @@ graph TB
     POD2[Pod 2<br/>Current Resources]
     POD3[Pod 3<br/>Recommended Resources]
     
-    HIST -->|Analyzes| REC
-    REC -->|Recommends| VPACtrl
-    VPACtrl -->|Updates| UPD
-    VPACtrl -->|Sets| AC
-    UPD -->|Modifies| POD1
-    UPD -->|Modifies| POD2
-    AC -->|Configures| POD3
+    HIST --> REC
+    REC --> VPACtrl
+    VPACtrl --> UPD
+    VPACtrl --> AC
+    UPD --> POD1
+    UPD --> POD2
+    AC --> POD3
     
     style VPACtrl fill:#326ce5,color:#fff
     style REC fill:#00d4aa,color:#fff
@@ -11327,15 +11327,15 @@ graph TB
     DEP[Deployment<br/>Worker Pods]
     PODS[Pods<br/>Application Containers]
     
-    QUEUE -->|Monitors| SCALER
-    DB -->|Monitors| SCALER
-    CLOUD -->|Monitors| SCALER
-    SO -->|Defines| KEDACtrl
-    KEDACtrl -->|Manages| SCALER
-    SCALER -->|Exposes| MA
-    MA -->|Provides| HPA
-    HPA -->|Scales| DEP
-    DEP -->|Creates| PODS
+    QUEUE --> SCALER
+    DB --> SCALER
+    CLOUD --> SCALER
+    SO --> KEDACtrl
+    KEDACtrl --> SCALER
+    SCALER --> MA
+    MA --> HPA
+    HPA --> DEP
+    DEP --> PODS
     
     style KEDACtrl fill:#326ce5,color:#fff
     style HPA fill:#00d4aa,color:#fff
@@ -11621,15 +11621,15 @@ graph TB
     NODE1[Node 1<br/>High Utilization]
     NODE2[Node 2<br/>Low Utilization]
     
-    PENDING -->|Detects| CA
-    SCHED -->|Reports| MON
-    MON -->|Provides State| CA
-    CA -->|Makes Decision| DEC
-    DEC -->|Scales| NG
-    NG -->|Creates| NEW
-    DEC -->|Removes| OLD
-    NEW -->|Joins| NODE1
-    OLD -->|Leaves| NODE2
+    PENDING --> CA
+    SCHED --> MON
+    MON --> CA
+    CA --> DEC
+    DEC --> NG
+    NG --> NEW
+    DEC --> OLD
+    NEW --> NODE1
+    OLD --> NODE2
     
     style CA fill:#326ce5,color:#fff
     style NG fill:#00d4aa,color:#fff
