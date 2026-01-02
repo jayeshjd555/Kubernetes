@@ -56,6 +56,7 @@
 10. [Advanced Topics](./docs/10-advanced.md)
     - [Taints and Tolerations](./docs/10-advanced.md#taints-and-tolerations)
     - [Node Affinity](./docs/10-advanced.md#node-affinity)
+    - [RBAC - Role-Based Access Control](./docs/10-advanced.md#rbac---role-based-access-control)
 
 ---
 
