@@ -7502,6 +7502,48 @@ spec:
    - Verify rules are correct
    - Check Service endpoints
 
+### Example Reference
+
+For a practical example of an Ingress YAML file, check out:
+
+- **[nginx/ingress.yml](./nginx/ingress.yml)** - Example Ingress definition
+
+This example demonstrates:
+- Ingress structure with multiple path-based routing rules
+- Path-based routing for different services (`/nginx` and `/`)
+- NGINX Ingress Controller annotations (rewrite-target)
+- Multiple backend services (nginx-service and notes-app-service)
+- Different port configurations (80 and 8000)
+- Path ordering (more specific path `/nginx` before default path `/`)
+
+**To use this example:**
+```bash
+# Apply the Ingress
+kubectl apply -f nginx/ingress.yml
+
+# View the Ingress
+kubectl get ingress -n nginx
+
+# Check Ingress details
+kubectl describe ingress nginx-notes-ingress -n nginx
+
+# View Ingress YAML
+kubectl get ingress nginx-notes-ingress -n nginx -o yaml
+
+# Check Ingress status
+kubectl get ingress nginx-notes-ingress -n nginx
+
+# Test routing (if Ingress Controller is installed)
+# /nginx path should route to nginx-service
+# / path should route to notes-app-service
+```
+
+**Important Notes:**
+- Ensure Ingress Controller is installed before applying
+- Verify that `nginx-service` and `notes-app-service` exist in the nginx namespace
+- The rewrite-target annotation rewrites the URL path
+- Path order matters - `/nginx` must come before `/` to work correctly
+
 ### Key Takeaways
 
 1. **Ingress provides HTTP/HTTPS routing** - Layer 7 routing
