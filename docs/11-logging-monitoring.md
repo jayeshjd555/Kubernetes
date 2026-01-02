@@ -18,8 +18,15 @@
   - [ELK Stack (Elasticsearch, Logstash, Kibana)](#elk-stack-elasticsearch-logstash-kibana)
   - [EFK Stack (Elasticsearch, Fluentd, Kibana)](#efk-stack-elasticsearch-fluentd-kibana)
   - [Loki Stack](#loki-stack)
+- [Popular Monitoring Tools](#popular-monitoring-tools)
+  - [Kubernetes Dashboard](#kubernetes-dashboard)
+  - [Datadog](#datadog)
+  - [New Relic](#new-relic)
+  - [Dynatrace](#dynatrace)
+  - [Other Popular Tools](#other-popular-tools)
+  - [Tool Selection Guide](#tool-selection-guide)
 - [Best Practices](#best-practices)
-- [Tutorial Reference](#tutorial-reference)
+- [Tutorial References](#tutorial-references)
 
 </details>
 
@@ -1388,6 +1395,268 @@ rate({namespace="default"}[1m]) > 10
 
 ---
 
+## Popular Monitoring Tools
+
+While Prometheus and Grafana are the most popular open-source monitoring solutions, there are several commercial and alternative tools available for Kubernetes monitoring:
+
+### Kubernetes Dashboard
+
+**Kubernetes Dashboard** is the official web-based UI for Kubernetes clusters. It provides a simple way to manage and monitor your cluster resources.
+
+**Features:**
+- View cluster resources (pods, services, deployments, etc.)
+- View logs and events
+- Execute commands in containers
+- Resource usage visualization
+- RBAC integration
+
+**Use Cases:**
+- Quick cluster overview
+- Development and testing environments
+- Learning Kubernetes concepts
+- Basic resource management
+
+**Installation:**
+```bash
+kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.7.0/aio/deploy/recommended.yaml
+```
+
+**Access:**
+```bash
+kubectl proxy
+# Then access: http://localhost:8001/api/v1/namespaces/kubernetes-dashboard/services/https:kubernetes-dashboard:/proxy/
+```
+
+**Tutorial:** [Kubernetes Dashboard Tutorial](../../tutorials/10-kubernetes-dashboard/README.md)
+
+---
+
+### Datadog
+
+**Datadog** is a comprehensive monitoring and observability platform that provides full-stack monitoring for Kubernetes.
+
+**Key Features:**
+- **Infrastructure Monitoring:** CPU, memory, network, disk metrics
+- **APM (Application Performance Monitoring):** Distributed tracing, application metrics
+- **Log Management:** Centralized log aggregation and analysis
+- **Real User Monitoring (RUM):** Frontend performance monitoring
+- **Synthetic Monitoring:** API and website uptime monitoring
+- **Alerting:** Intelligent alerting with machine learning
+- **Dashboards:** Pre-built and custom dashboards
+
+**Kubernetes Integration:**
+- Automatic service discovery
+- Pod and container metrics
+- Kubernetes events and logs
+- Cluster-level visibility
+- Auto-scaling recommendations
+
+**Use Cases:**
+- Enterprise monitoring needs
+- Multi-cloud environments
+- Full-stack observability
+- Compliance and security monitoring
+
+**Installation:**
+- Deploy Datadog Agent as DaemonSet
+- Configure API keys and tags
+- Enable integrations for specific services
+
+**Website:** [https://www.datadoghq.com](https://www.datadoghq.com)
+
+---
+
+### New Relic
+
+**New Relic** is an observability platform that provides application performance monitoring, infrastructure monitoring, and log management.
+
+**Key Features:**
+- **APM:** Application performance monitoring with code-level visibility
+- **Infrastructure Monitoring:** Server, container, and cloud monitoring
+- **Browser Monitoring:** Frontend performance and user experience
+- **Synthetic Monitoring:** Proactive monitoring of critical user journeys
+- **Logs:** Centralized log management with context
+- **Alerts:** Intelligent alerting with anomaly detection
+- **Dashboards:** Customizable dashboards and visualizations
+
+**Kubernetes Integration:**
+- Kubernetes cluster explorer
+- Pod and container metrics
+- Service mesh observability (Istio, Linkerd)
+- Automatic instrumentation
+- Kubernetes events correlation
+
+**Use Cases:**
+- Application performance optimization
+- Full-stack observability
+- Business metrics tracking
+- DevOps collaboration
+
+**Installation:**
+- Deploy New Relic agents (Infrastructure, APM, Logs)
+- Configure Kubernetes integration
+- Set up service mapping
+
+**Website:** [https://newrelic.com](https://newrelic.com)
+
+---
+
+### Dynatrace
+
+**Dynatrace** is an AI-powered observability platform that provides automatic and intelligent monitoring for Kubernetes environments.
+
+**Key Features:**
+- **AI-Powered Monitoring:** Automatic problem detection and root cause analysis
+- **Full-Stack Observability:** Infrastructure, applications, and user experience
+- **Application Security:** Runtime application security monitoring
+- **Cloud Automation:** Automated cloud-native monitoring
+- **Service Mesh Observability:** Istio, Linkerd, and Consul support
+- **Kubernetes Operator:** Native Kubernetes integration
+- **OneAgent:** Automatic instrumentation without code changes
+
+**Kubernetes Integration:**
+- Automatic Kubernetes discovery
+- Pod, container, and node monitoring
+- Service mesh observability
+- Kubernetes events and metrics
+- Automatic dependency mapping
+- AI-powered anomaly detection
+
+**Use Cases:**
+- Enterprise-grade monitoring
+- AI-driven operations
+- Complex microservices architectures
+- Cloud-native application monitoring
+
+**Installation:**
+- Deploy Dynatrace Operator
+- Install OneAgent via DaemonSet or sidecar
+- Configure Kubernetes integration
+
+**Website:** [https://www.dynatrace.com](https://www.dynatrace.com)
+
+---
+
+### Other Popular Tools
+
+#### Splunk
+
+**Splunk** is a platform for searching, monitoring, and analyzing machine-generated data.
+
+**Features:**
+- Log aggregation and analysis
+- Infrastructure monitoring
+- Security information and event management (SIEM)
+- Application performance monitoring
+- Machine learning capabilities
+
+**Kubernetes Integration:**
+- Splunk Connect for Kubernetes
+- Automatic log collection
+- Metrics collection
+- Event correlation
+
+**Website:** [https://www.splunk.com](https://www.splunk.com)
+
+---
+
+#### Elastic Observability
+
+**Elastic Observability** combines Elasticsearch, Kibana, and Elastic APM for full-stack observability.
+
+**Features:**
+- Log aggregation (Elasticsearch + Kibana)
+- Application performance monitoring (APM)
+- Infrastructure monitoring
+- User experience monitoring
+- Security analytics
+
+**Kubernetes Integration:**
+- Elastic Cloud on Kubernetes (ECK)
+- Beats for log and metric collection
+- Elastic APM agents
+- Kubernetes metadata enrichment
+
+**Website:** [https://www.elastic.co/observability](https://www.elastic.co/observability)
+
+---
+
+#### Jaeger
+
+**Jaeger** is an open-source distributed tracing system for microservices.
+
+**Features:**
+- Distributed tracing
+- Service dependency mapping
+- Performance bottleneck identification
+- OpenTelemetry support
+
+**Kubernetes Integration:**
+- Jaeger Operator for Kubernetes
+- Automatic service discovery
+- Integration with service meshes
+
+**Website:** [https://www.jaegertracing.io](https://www.jaegertracing.io)
+
+---
+
+#### OpenTelemetry
+
+**OpenTelemetry** is a vendor-neutral observability framework for generating, collecting, and exporting telemetry data.
+
+**Features:**
+- Unified API for traces, metrics, and logs
+- Vendor-neutral instrumentation
+- Automatic and manual instrumentation
+- Multiple language support
+
+**Kubernetes Integration:**
+- OpenTelemetry Operator
+- Automatic instrumentation
+- Integration with Prometheus, Jaeger, and other backends
+
+**Website:** [https://opentelemetry.io](https://opentelemetry.io)
+
+---
+
+#### Weave Scope
+
+**Weave Scope** is a visualization and monitoring tool for Docker and Kubernetes.
+
+**Features:**
+- Real-time application topology
+- Container and process visualization
+- Resource usage monitoring
+- Interactive exploration
+
+**Website:** [https://www.weave.works/oss/scope/](https://www.weave.works/oss/scope/)
+
+---
+
+### Tool Selection Guide
+
+**Choose based on your needs:**
+
+| Tool | Best For | Cost | Complexity |
+|------|----------|------|------------|
+| **Kubernetes Dashboard** | Quick overview, learning | Free | Low |
+| **Prometheus + Grafana** | Open-source, customizable | Free | Medium |
+| **Datadog** | Enterprise, full-stack | Paid | Low |
+| **New Relic** | APM focus, developer-friendly | Paid | Low |
+| **Dynatrace** | AI-powered, enterprise | Paid | Low |
+| **Splunk** | Log analysis, SIEM | Paid | High |
+| **Elastic Stack** | Log aggregation, open-source | Free/Paid | Medium |
+| **Jaeger** | Distributed tracing | Free | Medium |
+
+**Considerations:**
+- **Budget:** Open-source vs. commercial solutions
+- **Complexity:** Setup and maintenance effort
+- **Features:** Required capabilities (APM, logs, traces)
+- **Scale:** Cluster size and number of applications
+- **Team Expertise:** Learning curve and support needs
+
+---
+
 ## Best Practices
 
 ### Logging Best Practices
@@ -1467,9 +1736,10 @@ rate({namespace="default"}[1m]) > 10
 
 ---
 
-## Tutorial Reference
+## Tutorial References
 
 - **[Logging and Monitoring Tutorial](../../tutorials/09-logging-monitoring/README.md)** - Hands-on tutorial covering log collection with Fluentd and monitoring with Prometheus and Grafana
+- **[Kubernetes Dashboard Tutorial](../../tutorials/10-kubernetes-dashboard/README.md)** - Step-by-step guide to install and use Kubernetes Dashboard
 
 ---
 

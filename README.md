@@ -90,6 +90,7 @@ Practice what you learn with step-by-step tutorials:
 7. **[Autoscaling Tutorial](./tutorials/07-autoscaling/README.md)** - Horizontal Pod Autoscaler (HPA)
 8. **[Advanced Topics Tutorial](./tutorials/08-advanced/README.md)** - RBAC and Node Affinity
 9. **[Logging and Monitoring Tutorial](./tutorials/09-logging-monitoring/README.md)** - Log Collection and Monitoring Setup
+10. **[Kubernetes Dashboard Tutorial](./tutorials/10-kubernetes-dashboard/README.md)** - Install and Use Kubernetes Dashboard
 
 Each tutorial includes:
 - Step-by-step instructions
@@ -164,6 +165,12 @@ Kubernetes/
 │       ├── fluentd-daemonset.yml
 │       ├── prometheus-deployment.yml
 │       └── grafana-deployment.yml
+│   └── 10-kubernetes-dashboard/
+│       ├── README.md
+│       ├── dashboard-deployment.yml
+│       ├── serviceaccount.yml
+│       ├── clusterrolebinding.yml
+│       └── admin-user.yml
 ├── nginx/ (example YAML files)
 ├── mysql/ (example YAML files)
 └── apache/ (example YAML files)
