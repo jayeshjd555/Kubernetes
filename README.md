@@ -11366,7 +11366,7 @@ graph TB
     HPA --> Dep
     Dep --> Pods
     
-    style KEDA fill:#326ce5,color:#fff
+    style Controller fill:#326ce5,color:#fff
     style HPA fill:#00d4aa,color:#fff
     style Pods fill:#f4a261,color:#000
 ```
@@ -11904,8 +11904,8 @@ graph TB
         Pending[Pending Pods<br/>Can't Schedule]
     end
     
-    subgraph "Karpenter"
-        Karpenter[Karpenter<br/>Controller]
+    subgraph "Karpenter Components"
+        KarpenterCtrl[Karpenter Controller<br/>Main Controller]
         Analyzer[Workload Analyzer<br/>Requirements]
         Provisioner[Provisioner<br/>Node Provisioning]
         Consolidator[Consolidator<br/>Node Optimization]
@@ -11923,9 +11923,9 @@ graph TB
         Node3[Node 3<br/>Instance Type C]
     end
     
-    Pending --> Karpenter
-    Scheduler --> Karpenter
-    Karpenter --> Analyzer
+    Pending --> KarpenterCtrl
+    Scheduler --> KarpenterCtrl
+    KarpenterCtrl --> Analyzer
     Analyzer --> Provisioner
     Provisioner --> EC2
     Provisioner --> GCE
@@ -11933,10 +11933,10 @@ graph TB
     EC2 --> Node1
     GCE --> Node2
     Azure --> Node3
-    Karpenter --> Consolidator
+    KarpenterCtrl --> Consolidator
     Consolidator --> Node1
     
-    style Karpenter fill:#326ce5,color:#fff
+    style KarpenterCtrl fill:#326ce5,color:#fff
     style Provisioner fill:#00d4aa,color:#fff
     style Node1 fill:#f4a261,color:#000
 ```
