@@ -10734,11 +10734,32 @@ Result: Scale up to 4 Pods
 
 ```mermaid
 graph TB
-    MS[Metrics Server] --> HPA[HPA Controller]
-    PM[Prometheus] --> HPA
-    HPA --> DEP[Deployment]
-    DEP --> RS[ReplicaSet]
-    RS --> PODS[Pods]
+    subgraph "Metrics Collection"
+        MS[Metrics Server<br/>CPU/Memory Metrics]
+        PM[Prometheus<br/>Custom Metrics]
+    end
+    
+    subgraph "HPA Controller"
+        HPA[HPA Controller<br/>Horizontal Pod Autoscaler]
+        Calc[Calculate<br/>Desired Replicas]
+    end
+    
+    subgraph "Target Resources"
+        DEP[Deployment<br/>nginx-deployment]
+        RS[ReplicaSet]
+        PODS[Pods<br/>1, 2, 3, ... N]
+    end
+    
+    MS --> HPA
+    PM --> HPA
+    HPA --> Calc
+    Calc --> DEP
+    DEP --> RS
+    RS --> PODS
+    
+    style HPA fill:#326ce5,color:#fff
+    style DEP fill:#00d4aa,color:#fff
+    style PODS fill:#f4a261,color:#000
 ```
 
 ### HPA YAML Structure
@@ -11024,13 +11045,34 @@ Think of VPA as a **smart resource allocator**:
 
 ```mermaid
 graph TB
-    HIST[Historical Metrics] --> REC[Recommender]
-    REC --> VPA[VPA Controller]
-    VPA --> UPD[Updater]
-    VPA --> AC[Admission Controller]
-    UPD --> POD1[Pod 1]
-    UPD --> POD2[Pod 2]
-    AC --> POD3[Pod 3]
+    subgraph "VPA Components"
+        VPACtrl[VPA Controller<br/>Vertical Pod Autoscaler]
+        REC[Recommender<br/>Analyzes Usage]
+        UPD[Updater<br/>Updates Pods]
+        AC[Admission Controller<br/>Sets Resources]
+    end
+    
+    subgraph "Metrics"
+        HIST[Historical Metrics<br/>CPU/Memory Usage]
+    end
+    
+    subgraph "Target Pods"
+        POD1[Pod 1<br/>Current: 100m CPU]
+        POD2[Pod 2<br/>Current: 200m CPU]
+        POD3[Pod 3<br/>Recommended: 150m CPU]
+    end
+    
+    HIST --> REC
+    REC --> VPACtrl
+    VPACtrl --> UPD
+    VPACtrl --> AC
+    UPD --> POD1
+    UPD --> POD2
+    AC --> POD3
+    
+    style VPACtrl fill:#326ce5,color:#fff
+    style REC fill:#00d4aa,color:#fff
+    style POD3 fill:#f4a261,color:#000
 ```
 
 ### VPA YAML Structure
@@ -11292,15 +11334,41 @@ Think of KEDA as an **event-driven staffing manager**:
 
 ```mermaid
 graph TB
-    QUEUE[Message Queue] --> SCALER[Scalers]
-    DB[Database] --> SCALER
-    CLOUD[Cloud Services] --> SCALER
-    SCALER --> MA[Metrics Adapter]
-    SO[ScaledObject] --> KEDA[KEDA Controller]
-    KEDA --> SCALER
-    MA --> HPA[HPA]
-    HPA --> DEP[Deployment]
-    DEP --> PODS[Pods]
+    subgraph "Event Sources"
+        QUEUE[Message Queue<br/>RabbitMQ/Kafka]
+        DB[Database<br/>PostgreSQL/MySQL]
+        CLOUD[Cloud Services<br/>AWS SQS/Azure Queue]
+    end
+    
+    subgraph "KEDA Components"
+        SO[ScaledObject<br/>Scaling Definition]
+        SCALER[Scalers<br/>Event Source Connectors]
+        MA[Metrics Adapter<br/>Exposes Metrics]
+        KEDACtrl[KEDA Controller<br/>Manages Scaling]
+    end
+    
+    subgraph "HPA"
+        HPA[HPA<br/>Horizontal Pod Autoscaler]
+    end
+    
+    subgraph "Workload"
+        DEP[Deployment<br/>Worker Pods]
+        PODS[Pods<br/>1, 2, 3, ... N]
+    end
+    
+    QUEUE --> SCALER
+    DB --> SCALER
+    CLOUD --> SCALER
+    SCALER --> MA
+    SO --> KEDACtrl
+    KEDACtrl --> SCALER
+    MA --> HPA
+    HPA --> DEP
+    DEP --> PODS
+    
+    style KEDACtrl fill:#326ce5,color:#fff
+    style HPA fill:#00d4aa,color:#fff
+    style PODS fill:#f4a261,color:#000
 ```
 
 ### KEDA ScaledObject YAML Structure
@@ -11571,15 +11639,42 @@ Think of Cluster Autoscaler as an **automatic infrastructure manager**:
 
 ```mermaid
 graph TB
-    PENDING[Pending Pods] --> CA[CA Controller]
-    SCHED[Scheduler] --> MON[Monitor]
+    subgraph "Kubernetes Cluster"
+        SCHED[Scheduler<br/>Pod Scheduling]
+        PENDING[Pending Pods<br/>Can't Schedule]
+    end
+    
+    subgraph "Cluster Autoscaler"
+        CA[CA Controller<br/>Cluster Autoscaler]
+        MON[Monitor<br/>Cluster State]
+        DEC[Decision Engine<br/>Scale Up/Down]
+    end
+    
+    subgraph "Cloud Provider"
+        NG[Node Group<br/>Auto Scaling Group]
+        NEW[New Node<br/>Added]
+        OLD[Old Node<br/>Removed]
+    end
+    
+    subgraph "Cluster Nodes"
+        NODE1[Node 1<br/>Utilization: 80%]
+        NODE2[Node 2<br/>Utilization: 20%]
+        NODE3[Node 3<br/>Utilization: 15%]
+    end
+    
+    PENDING --> CA
+    SCHED --> MON
     MON --> CA
-    CA --> DEC[Decision Engine]
-    DEC --> NG[Node Group]
-    NG --> NEW[New Node]
-    DEC --> OLD[Old Node]
-    NEW --> NODE1[Node 1]
-    OLD --> NODE2[Node 2]
+    CA --> DEC
+    DEC --> NG
+    NG --> NEW
+    DEC --> OLD
+    NEW --> NODE1
+    OLD --> NODE2
+    
+    style CA fill:#326ce5,color:#fff
+    style NG fill:#00d4aa,color:#fff
+    style NEW fill:#f4a261,color:#000
 ```
 
 ### Cluster Autoscaler Configuration
