@@ -1427,7 +1427,7 @@ kubectl proxy
 # Then access: http://localhost:8001/api/v1/namespaces/kubernetes-dashboard/services/https:kubernetes-dashboard:/proxy/
 ```
 
-**Tutorial:** [Kubernetes Dashboard Tutorial](../../tutorials/10-kubernetes-dashboard/README.md)
+**Tutorial:** [Kubernetes Dashboard Tutorial](https://github.com/jayeshjd555/Kubernetes/blob/main/tutorials/10-kubernetes-dashboard/README.md)
 
 ---
 
@@ -1738,8 +1738,8 @@ kubectl proxy
 
 ## Tutorial References
 
-- **[Logging and Monitoring Tutorial](../../tutorials/09-logging-monitoring/README.md)** - Hands-on tutorial covering log collection with Fluentd and monitoring with Prometheus and Grafana
-- **[Kubernetes Dashboard Tutorial](../../tutorials/10-kubernetes-dashboard/README.md)** - Step-by-step guide to install and use Kubernetes Dashboard
+- **[Logging and Monitoring Tutorial](https://github.com/jayeshjd555/Kubernetes/blob/main/tutorials/09-logging-monitoring/README.md)** - Hands-on tutorial covering log collection with Fluentd and monitoring with Prometheus and Grafana
+- **[Kubernetes Dashboard Tutorial](https://github.com/jayeshjd555/Kubernetes/blob/main/tutorials/10-kubernetes-dashboard/README.md)** - Step-by-step guide to install and use Kubernetes Dashboard
 
 ---
 

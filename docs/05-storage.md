@@ -415,7 +415,7 @@ kubectl delete pv <pv-name>
 
 For a practical example of a PersistentVolume YAML file, check out:
 
-- **[nginx/persistentVolume.yml](../nginx/persistentVolume.yml)** - Example PersistentVolume definition
+- **[nginx/persistentVolume.yml](https://github.com/jayeshjd555/Kubernetes/blob/main/nginx/persistentVolume.yml)** - Example PersistentVolume definition
 
 This example demonstrates:
 - PV structure with capacity and access modes
@@ -424,7 +424,7 @@ This example demonstrates:
 - Reclaim policy configuration
 
 **📚 Tutorial:**
-- **[Storage Tutorial](../../tutorials/03-storage/README.md)** - Hands-on tutorial covering PVs, PVCs, and data persistence
+- **[Storage Tutorial](https://github.com/jayeshjd555/Kubernetes/blob/main/tutorials/03-storage/README.md)** - Hands-on tutorial covering PVs, PVCs, and data persistence
 - Basic PV pattern for local storage
 
 **To use this example:**
@@ -636,7 +636,7 @@ spec:
 
 For a practical example of a PersistentVolumeClaim YAML file, check out:
 
-- **[nginx/persistentVolumeClaim.yml](../nginx/persistentVolumeClaim.yml)** - Example PersistentVolumeClaim definition
+- **[nginx/persistentVolumeClaim.yml](https://github.com/jayeshjd555/Kubernetes/blob/main/nginx/persistentVolumeClaim.yml)** - Example PersistentVolumeClaim definition
 
 This example demonstrates:
 - PVC structure with access modes
@@ -645,7 +645,7 @@ This example demonstrates:
 - Basic PVC pattern for storage request
 
 **📚 Tutorial:**
-- **[Storage Tutorial](../../tutorials/03-storage/README.md)** - Step-by-step tutorial to create and use PVs and PVCs
+- **[Storage Tutorial](https://github.com/jayeshjd555/Kubernetes/blob/main/tutorials/03-storage/README.md)** - Step-by-step tutorial to create and use PVs and PVCs
 
 **To use this example:**
 ```bash

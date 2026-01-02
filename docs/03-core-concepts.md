@@ -696,10 +696,10 @@ kubectl apply -f namespace.yaml
 ```
 
 **Example Reference:**
-- **[nginx/namespace.yml](../nginx/namespace.yml)** - Example namespace YAML file for nginx namespace
+- **[nginx/namespace.yml](https://github.com/jayeshjd555/Kubernetes/blob/main/nginx/namespace.yml)** - Example namespace YAML file for nginx namespace
 
 **📚 Tutorial:**
-- **[Core Concepts Tutorial](../../tutorials/01-core-concepts/README.md)** - Hands-on tutorial covering Namespaces and Pods
+- **[Core Concepts Tutorial](https://github.com/jayeshjd555/Kubernetes/blob/main/tutorials/01-core-concepts/README.md)** - Hands-on tutorial covering Namespaces and Pods
 
 **Method 3: Using kubectl with YAML (one-liner)**
 
@@ -950,7 +950,7 @@ kubectl get deployments -n production
 
 For a practical example of a namespace YAML file, check out:
 
-- **[nginx/namespace.yml](../nginx/namespace.yml)** - Example namespace definition for creating an nginx namespace
+- **[nginx/namespace.yml](https://github.com/jayeshjd555/Kubernetes/blob/main/nginx/namespace.yml)** - Example namespace definition for creating an nginx namespace
 
 This example demonstrates:
 - Basic namespace YAML structure
@@ -1694,10 +1694,10 @@ kubectl edit pod <name>
 
 For a practical example of a Pod YAML file, check out:
 
-- **[nginx/pod.yml](../nginx/pod.yml)** - Example Pod definition for nginx
+- **[nginx/pod.yml](https://github.com/jayeshjd555/Kubernetes/blob/main/nginx/pod.yml)** - Example Pod definition for nginx
 
 **📚 Tutorial:**
-- **[Core Concepts Tutorial](../../tutorials/01-core-concepts/README.md)** - Step-by-step tutorial to create and manage Pods
+- **[Core Concepts Tutorial](https://github.com/jayeshjd555/Kubernetes/blob/main/tutorials/01-core-concepts/README.md)** - Step-by-step tutorial to create and manage Pods
 
 This example demonstrates:
 - Basic Pod structure with metadata

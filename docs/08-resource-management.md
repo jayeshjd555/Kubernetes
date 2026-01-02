@@ -9,7 +9,7 @@ Kubernetes provides multiple levels of resource management:
 4. **Cluster Level** - Total cluster capacity
 
 **📚 Tutorial:**
-- **[Resource Management Tutorial](../../tutorials/06-resource-management/README.md)** - Hands-on tutorial covering Resource Quotas and LimitRange
+- **[Resource Management Tutorial](https://github.com/jayeshjd555/Kubernetes/blob/main/tutorials/06-resource-management/README.md)** - Hands-on tutorial covering Resource Quotas and LimitRange
 
 ### Resource Requests and Limits
 

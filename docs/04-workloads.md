@@ -181,7 +181,7 @@ selector:
 
 For a practical example of a ReplicaSet YAML file, check out:
 
-- **[nginx/replicaset.yml](../nginx/replicaset.yml)** - Example ReplicaSet definition
+- **[nginx/replicaset.yml](https://github.com/jayeshjd555/Kubernetes/blob/main/nginx/replicaset.yml)** - Example ReplicaSet definition
 
 This example demonstrates:
 - ReplicaSet structure with replicas
@@ -189,7 +189,7 @@ This example demonstrates:
 - Pod template definition
 
 **📚 Tutorial:**
-- **[Workloads Tutorial](../../tutorials/02-workloads/README.md)** - Hands-on tutorial covering Deployments and ReplicaSets
+- **[Workloads Tutorial](https://github.com/jayeshjd555/Kubernetes/blob/main/tutorials/02-workloads/README.md)** - Hands-on tutorial covering Deployments and ReplicaSets
 - Basic ReplicaSet pattern
 
 **To use this example:**
@@ -505,14 +505,14 @@ Deployments have conditions:
 
 For a practical example of a Deployment YAML file, check out:
 
-- **[nginx/deployment.yml](../nginx/deployment.yml)** - Example Deployment definition
+- **[nginx/deployment.yml](https://github.com/jayeshjd555/Kubernetes/blob/main/nginx/deployment.yml)** - Example Deployment definition
 
 This example demonstrates:
 - Deployment structure with replicas
 - Label selector configuration
 
 **📚 Tutorial:**
-- **[Workloads Tutorial](../../tutorials/02-workloads/README.md)** - Step-by-step tutorial to create, scale, and update Deployments
+- **[Workloads Tutorial](https://github.com/jayeshjd555/Kubernetes/blob/main/tutorials/02-workloads/README.md)** - Step-by-step tutorial to create, scale, and update Deployments
 - Pod template definition
 - Basic Deployment pattern
 
@@ -1382,7 +1382,7 @@ kubectl delete -f daemonset.yaml
 
 For a practical example of a DaemonSet YAML file, check out:
 
-- **[nginx/daemonset.yml](../nginx/daemonset.yml)** - Example DaemonSet definition
+- **[nginx/daemonset.yml](https://github.com/jayeshjd555/Kubernetes/blob/main/nginx/daemonset.yml)** - Example DaemonSet definition
 
 This example demonstrates:
 - DaemonSet structure with selector
@@ -1682,7 +1682,7 @@ kubectl get job <job-name>
 
 For a practical example of a Job YAML file, check out:
 
-- **[nginx/jobs.yml](../nginx/jobs.yml)** - Example Job definition
+- **[nginx/jobs.yml](https://github.com/jayeshjd555/Kubernetes/blob/main/nginx/jobs.yml)** - Example Job definition
 
 This example demonstrates:
 - Job structure with completions and parallelism
@@ -2055,7 +2055,7 @@ kubectl get cronjob <cronjob-name>
 
 For a practical example of a CronJob YAML file, check out:
 
-- **[nginx/cron-job.yaml](../nginx/cron-job.yaml)** - Example CronJob definition
+- **[nginx/cron-job.yaml](https://github.com/jayeshjd555/Kubernetes/blob/main/nginx/cron-job.yaml)** - Example CronJob definition
 
 This example demonstrates:
 - CronJob structure with schedule

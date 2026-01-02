@@ -1323,8 +1323,8 @@ Or use Helm to generate base, then customize with Kustomize.
 
 ## Tutorial References
 
-- **[Helm Tutorial](../../tutorials/12-helm/README.md)** - Hands-on tutorial to create and use Helm charts
-- **[Kustomize Tutorial](../../tutorials/13-kustomize/README.md)** - Step-by-step guide to manage configurations with Kustomize
+- **[Helm Tutorial](https://github.com/jayeshjd555/Kubernetes/blob/main/tutorials/12-helm/README.md)** - Hands-on tutorial to create and use Helm charts
+- **[Kustomize Tutorial](https://github.com/jayeshjd555/Kubernetes/blob/main/tutorials/13-kustomize/README.md)** - Step-by-step guide to manage configurations with Kustomize
 
 ---
 

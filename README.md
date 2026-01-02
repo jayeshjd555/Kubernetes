@@ -70,11 +70,11 @@
     - [CRD Controllers](./docs/12-crds.md#crd-controllers)
     - [Operator Pattern](./docs/12-crds.md#operator-pattern)
 
-13. [Package Management and Templating](./docs/13-package-management.md)
-    - [Helm - The Package Manager for Kubernetes](./docs/13-package-management.md#helm---the-package-manager-for-kubernetes)
-    - [Kustomize - Kubernetes Native Configuration Management](./docs/13-package-management.md#kustomize---kubernetes-native-configuration-management)
-    - [Helm vs Kustomize](./docs/13-package-management.md#helm-vs-kustomize)
-    - [Other Package Management Tools](./docs/13-package-management.md#other-package-management-tools)
+13. [Package Management and Templating](https://github.com/jayeshjd555/Kubernetes/blob/main/docs/13-package-management.md)
+    - [Helm - The Package Manager for Kubernetes](https://github.com/jayeshjd555/Kubernetes/blob/main/docs/13-package-management.md#helm---the-package-manager-for-kubernetes)
+    - [Kustomize - Kubernetes Native Configuration Management](https://github.com/jayeshjd555/Kubernetes/blob/main/docs/13-package-management.md#kustomize---kubernetes-native-configuration-management)
+    - [Helm vs Kustomize](https://github.com/jayeshjd555/Kubernetes/blob/main/docs/13-package-management.md#helm-vs-kustomize)
+    - [Other Package Management Tools](https://github.com/jayeshjd555/Kubernetes/blob/main/docs/13-package-management.md#other-package-management-tools)
 
 ---
 
@@ -94,19 +94,19 @@
 
 Practice what you learn with step-by-step tutorials:
 
-1. **[Core Concepts Tutorial](./tutorials/01-core-concepts/README.md)** - Namespaces and Pods
-2. **[Workloads Tutorial](./tutorials/02-workloads/README.md)** - Deployments and ReplicaSets
-3. **[Storage Tutorial](./tutorials/03-storage/README.md)** - PersistentVolumes and PersistentVolumeClaims
-4. **[Networking Tutorial](./tutorials/04-networking/README.md)** - Services and Ingress
-5. **[Configuration Tutorial](./tutorials/05-configuration/README.md)** - ConfigMaps and Secrets
-6. **[Resource Management Tutorial](./tutorials/06-resource-management/README.md)** - Resource Quotas and Limits
-7. **[Autoscaling Tutorial](./tutorials/07-autoscaling/README.md)** - Horizontal Pod Autoscaler (HPA)
-8. **[Advanced Topics Tutorial](./tutorials/08-advanced/README.md)** - RBAC and Node Affinity
-9. **[Logging and Monitoring Tutorial](./tutorials/09-logging-monitoring/README.md)** - Log Collection and Monitoring Setup
-10. **[Kubernetes Dashboard Tutorial](./tutorials/10-kubernetes-dashboard/README.md)** - Install and Use Kubernetes Dashboard
-11. **[CRDs Tutorial](./tutorials/11-crds/README.md)** - Create and Use Custom Resource Definitions
-12. **[Helm Tutorial](./tutorials/12-helm/README.md)** - Create and Use Helm Charts
-13. **[Kustomize Tutorial](./tutorials/13-kustomize/README.md)** - Manage Configurations with Kustomize
+1. **[Core Concepts Tutorial](https://github.com/jayeshjd555/Kubernetes/blob/main/tutorials/01-core-concepts/README.md)** - Namespaces and Pods
+2. **[Workloads Tutorial](https://github.com/jayeshjd555/Kubernetes/blob/main/tutorials/02-workloads/README.md)** - Deployments and ReplicaSets
+3. **[Storage Tutorial](https://github.com/jayeshjd555/Kubernetes/blob/main/tutorials/03-storage/README.md)** - PersistentVolumes and PersistentVolumeClaims
+4. **[Networking Tutorial](https://github.com/jayeshjd555/Kubernetes/blob/main/tutorials/04-networking/README.md)** - Services and Ingress
+5. **[Configuration Tutorial](https://github.com/jayeshjd555/Kubernetes/blob/main/tutorials/05-configuration/README.md)** - ConfigMaps and Secrets
+6. **[Resource Management Tutorial](https://github.com/jayeshjd555/Kubernetes/blob/main/tutorials/06-resource-management/README.md)** - Resource Quotas and Limits
+7. **[Autoscaling Tutorial](https://github.com/jayeshjd555/Kubernetes/blob/main/tutorials/07-autoscaling/README.md)** - Horizontal Pod Autoscaler (HPA)
+8. **[Advanced Topics Tutorial](https://github.com/jayeshjd555/Kubernetes/blob/main/tutorials/08-advanced/README.md)** - RBAC and Node Affinity
+9. **[Logging and Monitoring Tutorial](https://github.com/jayeshjd555/Kubernetes/blob/main/tutorials/09-logging-monitoring/README.md)** - Log Collection and Monitoring Setup
+10. **[Kubernetes Dashboard Tutorial](https://github.com/jayeshjd555/Kubernetes/blob/main/tutorials/10-kubernetes-dashboard/README.md)** - Install and Use Kubernetes Dashboard
+11. **[CRDs Tutorial](https://github.com/jayeshjd555/Kubernetes/blob/main/tutorials/11-crds/README.md)** - Create and Use Custom Resource Definitions
+12. **[Helm Tutorial](https://github.com/jayeshjd555/Kubernetes/blob/main/tutorials/12-helm/README.md)** - Create and Use Helm Charts
+13. **[Kustomize Tutorial](https://github.com/jayeshjd555/Kubernetes/blob/main/tutorials/13-kustomize/README.md)** - Manage Configurations with Kustomize
 
 Each tutorial includes:
 - Step-by-step instructions

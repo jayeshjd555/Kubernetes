@@ -255,7 +255,7 @@ kubectl delete cm <configmap-name>
 
 For a practical example of a ConfigMap YAML file, check out:
 
-- **[mysql/configmap.yml](../mysql/configmap.yml)** - Example ConfigMap definition
+- **[mysql/configmap.yml](https://github.com/jayeshjd555/Kubernetes/blob/main/mysql/configmap.yml)** - Example ConfigMap definition
 
 This example demonstrates:
 - ConfigMap structure with data field
@@ -264,7 +264,7 @@ This example demonstrates:
 - Namespace assignment
 
 **📚 Tutorial:**
-- **[Configuration Tutorial](../../tutorials/05-configuration/README.md)** - Hands-on tutorial covering ConfigMaps and Secrets
+- **[Configuration Tutorial](https://github.com/jayeshjd555/Kubernetes/blob/main/tutorials/05-configuration/README.md)** - Hands-on tutorial covering ConfigMaps and Secrets
 
 **To use this example:**
 ```bash
@@ -628,7 +628,7 @@ kubectl delete secret <secret-name>
 
 For a practical example of a Secret YAML file, check out:
 
-- **[mysql/secrets.yml](../mysql/secrets.yml)** - Example Secret definition
+- **[mysql/secrets.yml](https://github.com/jayeshjd555/Kubernetes/blob/main/mysql/secrets.yml)** - Example Secret definition
 
 This example demonstrates:
 - Secret structure with data field
@@ -637,7 +637,7 @@ This example demonstrates:
 - Namespace assignment
 
 **📚 Tutorial:**
-- **[Configuration Tutorial](../../tutorials/05-configuration/README.md)** - Step-by-step tutorial to create and use ConfigMaps and Secrets
+- **[Configuration Tutorial](https://github.com/jayeshjd555/Kubernetes/blob/main/tutorials/05-configuration/README.md)** - Step-by-step tutorial to create and use ConfigMaps and Secrets
 
 **To use this example:**
 ```bash

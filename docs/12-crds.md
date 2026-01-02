@@ -1113,7 +1113,7 @@ spec:
 
 ## Tutorial Reference
 
-- **[CRDs Tutorial](../../tutorials/11-crds/README.md)** - Hands-on tutorial to create and use Custom Resource Definitions
+- **[CRDs Tutorial](https://github.com/jayeshjd555/Kubernetes/blob/main/tutorials/11-crds/README.md)** - Hands-on tutorial to create and use Custom Resource Definitions
 
 ---
 

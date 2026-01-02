@@ -240,10 +240,10 @@ spec:
 
 **Example: HPA for CPU and Memory**
 
-> **📁 Reference:** See example YAML file: [`apache/hpa.yaml`](../apache/hpa.yaml)
+> **📁 Reference:** See example YAML file: [`apache/hpa.yaml`](https://github.com/jayeshjd555/Kubernetes/blob/main/apache/hpa.yaml)
 
 **📚 Tutorial:**
-- **[Autoscaling Tutorial](../../tutorials/07-autoscaling/README.md)** - Step-by-step tutorial to set up and test HPA
+- **[Autoscaling Tutorial](https://github.com/jayeshjd555/Kubernetes/blob/main/tutorials/07-autoscaling/README.md)** - Step-by-step tutorial to set up and test HPA
 
 ```yaml
 apiVersion: autoscaling/v2
@@ -523,7 +523,7 @@ spec:
 
 **Example: VPA with Auto Mode**
 
-> **📁 Reference:** See example YAML file: [`apache/vpa.yaml`](../apache/vpa.yaml)
+> **📁 Reference:** See example YAML file: [`apache/vpa.yaml`](https://github.com/jayeshjd555/Kubernetes/blob/main/apache/vpa.yaml)
 
 ```yaml
 kind: VerticalPodAutoscaler

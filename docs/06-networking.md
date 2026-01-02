@@ -436,7 +436,7 @@ spec:
 
 For a practical example of a Service YAML file, check out:
 
-- **[nginx/service.yml](../nginx/service.yml)** - Example Service definition
+- **[nginx/service.yml](https://github.com/jayeshjd555/Kubernetes/blob/main/nginx/service.yml)** - Example Service definition
 
 This example demonstrates:
 - Service structure with selector
@@ -444,7 +444,7 @@ This example demonstrates:
 - ClusterIP service type (default)
 
 **📚 Tutorial:**
-- **[Networking Tutorial](../../tutorials/04-networking/README.md)** - Hands-on tutorial covering Services and Ingress
+- **[Networking Tutorial](https://github.com/jayeshjd555/Kubernetes/blob/main/tutorials/04-networking/README.md)** - Hands-on tutorial covering Services and Ingress
 - Basic Service pattern for nginx
 
 **To use this example:**
@@ -1246,7 +1246,7 @@ spec:
 
 For a practical example of an Ingress YAML file, check out:
 
-- **[nginx/ingress.yml](../nginx/ingress.yml)** - Example Ingress definition
+- **[nginx/ingress.yml](https://github.com/jayeshjd555/Kubernetes/blob/main/nginx/ingress.yml)** - Example Ingress definition
 
 This example demonstrates:
 - Ingress structure with multiple path-based routing rules
@@ -1257,7 +1257,7 @@ This example demonstrates:
 - Path ordering (more specific path `/nginx` before default path `/`)
 
 **📚 Tutorial:**
-- **[Networking Tutorial](../../tutorials/04-networking/README.md)** - Step-by-step tutorial to create Services and configure Ingress
+- **[Networking Tutorial](https://github.com/jayeshjd555/Kubernetes/blob/main/tutorials/04-networking/README.md)** - Step-by-step tutorial to create Services and configure Ingress
 
 **To use this example:**
 ```bash
