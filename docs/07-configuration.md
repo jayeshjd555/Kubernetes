@@ -255,7 +255,7 @@ kubectl delete cm <configmap-name>
 
 For a practical example of a ConfigMap YAML file, check out:
 
-- **[mysql/configmap.yml](./mysql/configmap.yml)** - Example ConfigMap definition
+- **[mysql/configmap.yml](../mysql/configmap.yml)** - Example ConfigMap definition
 
 This example demonstrates:
 - ConfigMap structure with data field
@@ -625,7 +625,7 @@ kubectl delete secret <secret-name>
 
 For a practical example of a Secret YAML file, check out:
 
-- **[mysql/secrets.yml](./mysql/secrets.yml)** - Example Secret definition
+- **[mysql/secrets.yml](../mysql/secrets.yml)** - Example Secret definition
 
 This example demonstrates:
 - Secret structure with data field

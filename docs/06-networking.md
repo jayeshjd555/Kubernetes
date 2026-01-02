@@ -436,7 +436,7 @@ spec:
 
 For a practical example of a Service YAML file, check out:
 
-- **[nginx/service.yml](./nginx/service.yml)** - Example Service definition
+- **[nginx/service.yml](../nginx/service.yml)** - Example Service definition
 
 This example demonstrates:
 - Service structure with selector
@@ -1243,7 +1243,7 @@ spec:
 
 For a practical example of an Ingress YAML file, check out:
 
-- **[nginx/ingress.yml](./nginx/ingress.yml)** - Example Ingress definition
+- **[nginx/ingress.yml](../nginx/ingress.yml)** - Example Ingress definition
 
 This example demonstrates:
 - Ingress structure with multiple path-based routing rules

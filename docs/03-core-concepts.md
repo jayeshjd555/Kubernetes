@@ -696,7 +696,7 @@ kubectl apply -f namespace.yaml
 ```
 
 **Example Reference:**
-- **[nginx/namespace.yml](./nginx/namespace.yml)** - Example namespace YAML file for nginx namespace
+- **[nginx/namespace.yml](../nginx/namespace.yml)** - Example namespace YAML file for nginx namespace
 
 **Method 3: Using kubectl with YAML (one-liner)**
 
@@ -947,7 +947,7 @@ kubectl get deployments -n production
 
 For a practical example of a namespace YAML file, check out:
 
-- **[nginx/namespace.yml](./nginx/namespace.yml)** - Example namespace definition for creating an nginx namespace
+- **[nginx/namespace.yml](../nginx/namespace.yml)** - Example namespace definition for creating an nginx namespace
 
 This example demonstrates:
 - Basic namespace YAML structure
@@ -1691,7 +1691,7 @@ kubectl edit pod <name>
 
 For a practical example of a Pod YAML file, check out:
 
-- **[nginx/pod.yml](./nginx/pod.yml)** - Example Pod definition for nginx
+- **[nginx/pod.yml](../nginx/pod.yml)** - Example Pod definition for nginx
 
 This example demonstrates:
 - Basic Pod structure with metadata

@@ -415,7 +415,7 @@ kubectl delete pv <pv-name>
 
 For a practical example of a PersistentVolume YAML file, check out:
 
-- **[nginx/persistentVolume.yml](./nginx/persistentVolume.yml)** - Example PersistentVolume definition
+- **[nginx/persistentVolume.yml](../nginx/persistentVolume.yml)** - Example PersistentVolume definition
 
 This example demonstrates:
 - PV structure with capacity and access modes
@@ -633,7 +633,7 @@ spec:
 
 For a practical example of a PersistentVolumeClaim YAML file, check out:
 
-- **[nginx/persistentVolumeClaim.yml](./nginx/persistentVolumeClaim.yml)** - Example PersistentVolumeClaim definition
+- **[nginx/persistentVolumeClaim.yml](../nginx/persistentVolumeClaim.yml)** - Example PersistentVolumeClaim definition
 
 This example demonstrates:
 - PVC structure with access modes

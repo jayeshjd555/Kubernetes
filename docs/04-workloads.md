@@ -181,7 +181,7 @@ selector:
 
 For a practical example of a ReplicaSet YAML file, check out:
 
-- **[nginx/replicaset.yml](./nginx/replicaset.yml)** - Example ReplicaSet definition
+- **[nginx/replicaset.yml](../nginx/replicaset.yml)** - Example ReplicaSet definition
 
 This example demonstrates:
 - ReplicaSet structure with replicas
@@ -502,7 +502,7 @@ Deployments have conditions:
 
 For a practical example of a Deployment YAML file, check out:
 
-- **[nginx/deployment.yml](./nginx/deployment.yml)** - Example Deployment definition
+- **[nginx/deployment.yml](../nginx/deployment.yml)** - Example Deployment definition
 
 This example demonstrates:
 - Deployment structure with replicas
@@ -1376,7 +1376,7 @@ kubectl delete -f daemonset.yaml
 
 For a practical example of a DaemonSet YAML file, check out:
 
-- **[nginx/daemonset.yml](./nginx/daemonset.yml)** - Example DaemonSet definition
+- **[nginx/daemonset.yml](../nginx/daemonset.yml)** - Example DaemonSet definition
 
 This example demonstrates:
 - DaemonSet structure with selector
@@ -1676,7 +1676,7 @@ kubectl get job <job-name>
 
 For a practical example of a Job YAML file, check out:
 
-- **[nginx/jobs.yml](./nginx/jobs.yml)** - Example Job definition
+- **[nginx/jobs.yml](../nginx/jobs.yml)** - Example Job definition
 
 This example demonstrates:
 - Job structure with completions and parallelism
@@ -2049,7 +2049,7 @@ kubectl get cronjob <cronjob-name>
 
 For a practical example of a CronJob YAML file, check out:
 
-- **[nginx/cron-job.yaml](./nginx/cron-job.yaml)** - Example CronJob definition
+- **[nginx/cron-job.yaml](../nginx/cron-job.yaml)** - Example CronJob definition
 
 This example demonstrates:
 - CronJob structure with schedule
