@@ -10734,20 +10734,20 @@ Result: Scale up to 4 Pods
 
 ```mermaid
 graph TB
-    subgraph "Metrics Collection"
-        MS[Metrics Server<br/>CPU/Memory Metrics]
-        PM[Prometheus<br/>Custom Metrics]
+    subgraph Metrics["Metrics Collection"]
+        MS["Metrics Server<br/>CPU/Memory Metrics"]
+        PM["Prometheus<br/>Custom Metrics"]
     end
     
-    subgraph "HPA Controller"
-        HPA[HPA<br/>Horizontal Pod Autoscaler]
-        Calc[Calculate<br/>Desired Replicas]
+    subgraph HPACtrl["HPA Controller"]
+        HPA["HPA Controller<br/>Horizontal Pod Autoscaler"]
+        Calc["Calculate<br/>Desired Replicas"]
     end
     
-    subgraph "Target Resources"
-        Dep[Deployment<br/>nginx-deployment]
-        RS[ReplicaSet]
-        Pods[Pods<br/>1, 2, 3, ... N]
+    subgraph Targets["Target Resources"]
+        Dep["Deployment<br/>nginx-deployment"]
+        RS["ReplicaSet"]
+        Pods["Pods<br/>1, 2, 3, ... N"]
     end
     
     MS --> HPA
@@ -11045,32 +11045,32 @@ Think of VPA as a **smart resource allocator**:
 
 ```mermaid
 graph TB
-    subgraph "VPA Components"
-        VPA[VPA<br/>Vertical Pod Autoscaler]
-        Rec[Recommender<br/>Analyzes Usage]
-        Upd[Updater<br/>Updates Pods]
-        AC[Admission Controller<br/>Sets Resources]
+    subgraph VPAComp["VPA Components"]
+        VPACtrl["VPA Controller<br/>Vertical Pod Autoscaler"]
+        Rec["Recommender<br/>Analyzes Usage"]
+        Upd["Updater<br/>Updates Pods"]
+        AC["Admission Controller<br/>Sets Resources"]
     end
     
-    subgraph "Metrics"
-        Hist[Historical Metrics<br/>CPU/Memory Usage]
+    subgraph Metrics["Metrics"]
+        Hist["Historical Metrics<br/>CPU/Memory Usage"]
     end
     
-    subgraph "Target Pods"
-        Pod1[Pod 1<br/>Current: 100m CPU]
-        Pod2[Pod 2<br/>Current: 200m CPU]
-        Pod3[Pod 3<br/>Recommended: 150m CPU]
+    subgraph TargetPods["Target Pods"]
+        Pod1["Pod 1<br/>Current: 100m CPU"]
+        Pod2["Pod 2<br/>Current: 200m CPU"]
+        Pod3["Pod 3<br/>Recommended: 150m CPU"]
     end
     
     Hist --> Rec
-    Rec --> VPA
-    VPA --> Upd
-    VPA --> AC
+    Rec --> VPACtrl
+    VPACtrl --> Upd
+    VPACtrl --> AC
     Upd --> Pod1
     Upd --> Pod2
     AC --> Pod3
     
-    style VPA fill:#326ce5,color:#fff
+    style VPACtrl fill:#326ce5,color:#fff
     style Rec fill:#00d4aa,color:#fff
     style Pod3 fill:#f4a261,color:#000
 ```
@@ -11334,39 +11334,39 @@ Think of KEDA as an **event-driven staffing manager**:
 
 ```mermaid
 graph TB
-    subgraph "Event Sources"
-        Queue[Message Queue<br/>RabbitMQ/Kafka]
-        DB[Database<br/>PostgreSQL/MySQL]
-        Cloud[Cloud Services<br/>AWS SQS/Azure Queue]
+    subgraph Events["Event Sources"]
+        Queue["Message Queue<br/>RabbitMQ/Kafka"]
+        DB["Database<br/>PostgreSQL/MySQL"]
+        Cloud["Cloud Services<br/>AWS SQS/Azure Queue"]
     end
     
-    subgraph "KEDA Components"
-        SO[ScaledObject<br/>Scaling Definition]
-        Scaler[Scalers<br/>Event Source Connectors]
-        MA[Metrics Adapter<br/>Exposes Metrics]
-        Controller[KEDA Controller<br/>Manages Scaling]
+    subgraph KEDAComp["KEDA Components"]
+        SO["ScaledObject<br/>Scaling Definition"]
+        Scaler["Scalers<br/>Event Source Connectors"]
+        MA["Metrics Adapter<br/>Exposes Metrics"]
+        KEDACtrl["KEDA Controller<br/>Manages Scaling"]
     end
     
-    subgraph "HPA"
-        HPA[HPA<br/>Horizontal Pod Autoscaler]
+    subgraph HPAComp["HPA"]
+        HPA["HPA<br/>Horizontal Pod Autoscaler"]
     end
     
-    subgraph "Workload"
-        Dep[Deployment<br/>Worker Pods]
-        Pods[Pods<br/>1, 2, 3, ... N]
+    subgraph Workload["Workload"]
+        Dep["Deployment<br/>Worker Pods"]
+        Pods["Pods<br/>1, 2, 3, ... N"]
     end
     
     Queue --> Scaler
     DB --> Scaler
     Cloud --> Scaler
     Scaler --> MA
-    SO --> Controller
-    Controller --> Scaler
+    SO --> KEDACtrl
+    KEDACtrl --> Scaler
     MA --> HPA
     HPA --> Dep
     Dep --> Pods
     
-    style Controller fill:#326ce5,color:#fff
+    style KEDACtrl fill:#326ce5,color:#fff
     style HPA fill:#00d4aa,color:#fff
     style Pods fill:#f4a261,color:#000
 ```
@@ -11639,27 +11639,27 @@ Think of Cluster Autoscaler as an **automatic infrastructure manager**:
 
 ```mermaid
 graph TB
-    subgraph "Kubernetes Cluster"
-        Scheduler[Scheduler<br/>Pod Scheduling]
-        Pending[Pending Pods<br/>Can't Schedule]
+    subgraph K8sCluster["Kubernetes Cluster"]
+        Scheduler["Scheduler<br/>Pod Scheduling"]
+        Pending["Pending Pods<br/>Can't Schedule"]
     end
     
-    subgraph "Cluster Autoscaler"
-        CA[Cluster Autoscaler<br/>Controller]
-        Monitor[Monitor<br/>Cluster State]
-        Decision[Decision Engine<br/>Scale Up/Down]
+    subgraph CACtrl["Cluster Autoscaler"]
+        CA["CA Controller<br/>Cluster Autoscaler"]
+        Monitor["Monitor<br/>Cluster State"]
+        Decision["Decision Engine<br/>Scale Up/Down"]
     end
     
-    subgraph "Cloud Provider"
-        NodeGroup[Node Group<br/>Auto Scaling Group]
-        NewNode[New Node<br/>Added]
-        OldNode[Old Node<br/>Removed]
+    subgraph CloudProv["Cloud Provider"]
+        NodeGroup["Node Group<br/>Auto Scaling Group"]
+        NewNode["New Node<br/>Added"]
+        OldNode["Old Node<br/>Removed"]
     end
     
-    subgraph "Cluster Nodes"
-        Node1[Node 1<br/>Utilization: 80%]
-        Node2[Node 2<br/>Utilization: 20%]
-        Node3[Node 3<br/>Utilization: 15%]
+    subgraph ClusterNodes["Cluster Nodes"]
+        Node1["Node 1<br/>Utilization: 80%"]
+        Node2["Node 2<br/>Utilization: 20%"]
+        Node3["Node 3<br/>Utilization: 15%"]
     end
     
     Pending --> CA
