@@ -70,6 +70,12 @@
     - [CRD Controllers](./docs/12-crds.md#crd-controllers)
     - [Operator Pattern](./docs/12-crds.md#operator-pattern)
 
+13. [Package Management and Templating](./docs/13-package-management.md)
+    - [Helm - The Package Manager for Kubernetes](./docs/13-package-management.md#helm---the-package-manager-for-kubernetes)
+    - [Kustomize - Kubernetes Native Configuration Management](./docs/13-package-management.md#kustomize---kubernetes-native-configuration-management)
+    - [Helm vs Kustomize](./docs/13-package-management.md#helm-vs-kustomize)
+    - [Other Package Management Tools](./docs/13-package-management.md#other-package-management-tools)
+
 ---
 
 ## Quick Navigation
@@ -99,6 +105,8 @@ Practice what you learn with step-by-step tutorials:
 9. **[Logging and Monitoring Tutorial](./tutorials/09-logging-monitoring/README.md)** - Log Collection and Monitoring Setup
 10. **[Kubernetes Dashboard Tutorial](./tutorials/10-kubernetes-dashboard/README.md)** - Install and Use Kubernetes Dashboard
 11. **[CRDs Tutorial](./tutorials/11-crds/README.md)** - Create and Use Custom Resource Definitions
+12. **[Helm Tutorial](./tutorials/12-helm/README.md)** - Create and Use Helm Charts
+13. **[Kustomize Tutorial](./tutorials/13-kustomize/README.md)** - Manage Configurations with Kustomize
 
 Each tutorial includes:
 - Step-by-step instructions
@@ -125,7 +133,8 @@ Kubernetes/
 │   ├── 09-autoscaling.md
 │   ├── 10-advanced.md
 │   ├── 11-logging-monitoring.md
-│   └── 12-crds.md
+│   ├── 12-crds.md
+│   └── 13-package-management.md
 ├── tutorials/
 │   ├── 01-core-concepts/
 │   │   ├── README.md
@@ -185,6 +194,10 @@ Kubernetes/
 │       ├── website-crd.yaml
 │       ├── my-website.yaml
 │       └── websites.yaml
+│   └── 12-helm/
+│       └── README.md
+│   └── 13-kustomize/
+│       └── README.md
 ├── nginx/ (example YAML files)
 ├── mysql/ (example YAML files)
 └── apache/ (example YAML files)
