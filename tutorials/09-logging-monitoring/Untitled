@@ -1,0 +1,1 @@
+kubectl get pods -n logging-monitoring -l app=fluentd
