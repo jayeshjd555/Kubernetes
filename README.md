@@ -10734,28 +10734,18 @@ Result: Scale up to 4 Pods
 
 ```mermaid
 graph TB
-    subgraph "Metrics Collection"
-        MS[Metrics Server<br/>CPU Memory Metrics]
-        PM[Prometheus<br/>Custom Metrics]
-    end
+    MS[Metrics Server<br/>CPU Memory Metrics]
+    PM[Prometheus<br/>Custom Metrics]
+    HPA[HPA Controller<br/>Horizontal Pod Autoscaler]
+    DEP[Deployment<br/>nginx-deployment]
+    RS[ReplicaSet]
+    PODS[Pods<br/>Application Containers]
     
-    subgraph "HPA Controller"
-        HPA[HPA Controller<br/>Horizontal Pod Autoscaler]
-        Calc[Calculate<br/>Desired Replicas]
-    end
-    
-    subgraph "Target Resources"
-        DEP[Deployment<br/>nginx-deployment]
-        RS[ReplicaSet]
-        PODS[Pods<br/>Application Containers]
-    end
-    
-    MS --> HPA
-    PM --> HPA
-    HPA --> Calc
-    Calc --> DEP
-    DEP --> RS
-    RS --> PODS
+    MS -->|Provides Metrics| HPA
+    PM -->|Provides Metrics| HPA
+    HPA -->|Scales| DEP
+    DEP -->|Manages| RS
+    RS -->|Creates| PODS
     
     style HPA fill:#326ce5,color:#fff
     style DEP fill:#00d4aa,color:#fff
@@ -11045,30 +11035,22 @@ Think of VPA as a **smart resource allocator**:
 
 ```mermaid
 graph TB
-    subgraph "VPA Components"
-        VPACtrl[VPA Controller<br/>Vertical Pod Autoscaler]
-        REC[Recommender<br/>Analyzes Usage]
-        UPD[Updater<br/>Updates Pods]
-        AC[Admission Controller<br/>Sets Resources]
-    end
+    HIST[Historical Metrics<br/>CPU Memory Usage]
+    REC[Recommender<br/>Analyzes Usage]
+    VPACtrl[VPA Controller<br/>Vertical Pod Autoscaler]
+    UPD[Updater<br/>Updates Pods]
+    AC[Admission Controller<br/>Sets Resources]
+    POD1[Pod 1<br/>Current Resources]
+    POD2[Pod 2<br/>Current Resources]
+    POD3[Pod 3<br/>Recommended Resources]
     
-    subgraph "Metrics"
-        HIST[Historical Metrics<br/>CPU Memory Usage]
-    end
-    
-    subgraph "Target Pods"
-        POD1[Pod 1<br/>Current Resources]
-        POD2[Pod 2<br/>Current Resources]
-        POD3[Pod 3<br/>Recommended Resources]
-    end
-    
-    HIST --> REC
-    REC --> VPACtrl
-    VPACtrl --> UPD
-    VPACtrl --> AC
-    UPD --> POD1
-    UPD --> POD2
-    AC --> POD3
+    HIST -->|Analyzes| REC
+    REC -->|Recommends| VPACtrl
+    VPACtrl -->|Updates| UPD
+    VPACtrl -->|Sets| AC
+    UPD -->|Modifies| POD1
+    UPD -->|Modifies| POD2
+    AC -->|Configures| POD3
     
     style VPACtrl fill:#326ce5,color:#fff
     style REC fill:#00d4aa,color:#fff
@@ -11334,37 +11316,26 @@ Think of KEDA as an **event-driven staffing manager**:
 
 ```mermaid
 graph TB
-    subgraph "Event Sources"
-        QUEUE[Message Queue<br/>RabbitMQ Kafka]
-        DB[Database<br/>PostgreSQL MySQL]
-        CLOUD[Cloud Services<br/>AWS SQS Azure Queue]
-    end
+    QUEUE[Message Queue<br/>RabbitMQ Kafka]
+    DB[Database<br/>PostgreSQL MySQL]
+    CLOUD[Cloud Services<br/>AWS SQS Azure Queue]
+    SCALER[Scalers<br/>Event Source Connectors]
+    SO[ScaledObject<br/>Scaling Definition]
+    KEDACtrl[KEDA Controller<br/>Manages Scaling]
+    MA[Metrics Adapter<br/>Exposes Metrics]
+    HPA[HPA<br/>Horizontal Pod Autoscaler]
+    DEP[Deployment<br/>Worker Pods]
+    PODS[Pods<br/>Application Containers]
     
-    subgraph "KEDA Components"
-        SO[ScaledObject<br/>Scaling Definition]
-        SCALER[Scalers<br/>Event Source Connectors]
-        MA[Metrics Adapter<br/>Exposes Metrics]
-        KEDACtrl[KEDA Controller<br/>Manages Scaling]
-    end
-    
-    subgraph "HPA"
-        HPA[HPA<br/>Horizontal Pod Autoscaler]
-    end
-    
-    subgraph "Workload"
-        DEP[Deployment<br/>Worker Pods]
-        PODS[Pods<br/>Application Containers]
-    end
-    
-    QUEUE --> SCALER
-    DB --> SCALER
-    CLOUD --> SCALER
-    SCALER --> MA
-    SO --> KEDACtrl
-    KEDACtrl --> SCALER
-    MA --> HPA
-    HPA --> DEP
-    DEP --> PODS
+    QUEUE -->|Monitors| SCALER
+    DB -->|Monitors| SCALER
+    CLOUD -->|Monitors| SCALER
+    SO -->|Defines| KEDACtrl
+    KEDACtrl -->|Manages| SCALER
+    SCALER -->|Exposes| MA
+    MA -->|Provides| HPA
+    HPA -->|Scales| DEP
+    DEP -->|Creates| PODS
     
     style KEDACtrl fill:#326ce5,color:#fff
     style HPA fill:#00d4aa,color:#fff
@@ -11639,38 +11610,26 @@ Think of Cluster Autoscaler as an **automatic infrastructure manager**:
 
 ```mermaid
 graph TB
-    subgraph "Kubernetes Cluster"
-        SCHED[Scheduler<br/>Pod Scheduling]
-        PENDING[Pending Pods<br/>Cant Schedule]
-    end
+    SCHED[Scheduler<br/>Pod Scheduling]
+    PENDING[Pending Pods<br/>Cant Schedule]
+    MON[Monitor<br/>Cluster State]
+    CA[CA Controller<br/>Cluster Autoscaler]
+    DEC[Decision Engine<br/>Scale Up Down]
+    NG[Node Group<br/>Auto Scaling Group]
+    NEW[New Node<br/>Added]
+    OLD[Old Node<br/>Removed]
+    NODE1[Node 1<br/>High Utilization]
+    NODE2[Node 2<br/>Low Utilization]
     
-    subgraph "Cluster Autoscaler"
-        CA[CA Controller<br/>Cluster Autoscaler]
-        MON[Monitor<br/>Cluster State]
-        DEC[Decision Engine<br/>Scale Up Down]
-    end
-    
-    subgraph "Cloud Provider"
-        NG[Node Group<br/>Auto Scaling Group]
-        NEW[New Node<br/>Added]
-        OLD[Old Node<br/>Removed]
-    end
-    
-    subgraph "Cluster Nodes"
-        NODE1[Node 1<br/>High Utilization]
-        NODE2[Node 2<br/>Low Utilization]
-        NODE3[Node 3<br/>Low Utilization]
-    end
-    
-    PENDING --> CA
-    SCHED --> MON
-    MON --> CA
-    CA --> DEC
-    DEC --> NG
-    NG --> NEW
-    DEC --> OLD
-    NEW --> NODE1
-    OLD --> NODE2
+    PENDING -->|Detects| CA
+    SCHED -->|Reports| MON
+    MON -->|Provides State| CA
+    CA -->|Makes Decision| DEC
+    DEC -->|Scales| NG
+    NG -->|Creates| NEW
+    DEC -->|Removes| OLD
+    NEW -->|Joins| NODE1
+    OLD -->|Leaves| NODE2
     
     style CA fill:#326ce5,color:#fff
     style NG fill:#00d4aa,color:#fff
