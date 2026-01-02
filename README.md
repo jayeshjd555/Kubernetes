@@ -9498,20 +9498,20 @@ spec:
 ### Probe Timing Diagram
 
 ```mermaid
-gantt
-    title Probe Timing Example
-    dateFormat X
-    axisFormat %s
+graph LR
+    Start[Container Starts] -->|0-10s| Wait[Initial Delay]
+    Wait -->|10s| SP[Startup Probe<br/>Active]
+    SP -->|10-60s| Check[Startup Checks<br/>Every 10s]
+    Check -->|Success| Enable[Enable Liveness<br/>Enable Readiness]
+    Enable -->|60s+| LP[Liveness Probe<br/>Every 10s]
+    Enable -->|60s+| RP[Readiness Probe<br/>Every 5s]
     
-    section Container
-    Starting           :0, 10s
-    Startup Probe      :10s, 50s
-    Running            :60s, 300s
-    
-    section Probes
-    Startup Checks     :10s, 50s
-    Liveness Active    :60s, 300s
-    Readiness Active   :60s, 300s
+    style Start fill:#4fc3f7,color:#000
+    style Wait fill:#ff9800,color:#fff
+    style SP fill:#4caf50,color:#fff
+    style Enable fill:#90ee90,color:#000
+    style LP fill:#d32f2f,color:#fff
+    style RP fill:#ff9800,color:#fff
 ```
 
 ### Probe Best Practices
