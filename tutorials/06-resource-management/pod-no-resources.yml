@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: default-pod
+  namespace: tutorial-resources
+  labels:
+    app: default-app
+    tutorial: resource-management
+spec:
+  containers:
+  - name: app
+    image: nginx:latest
+    # No resources specified - will use LimitRange defaults
+

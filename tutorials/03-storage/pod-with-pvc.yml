@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: data-pod
+  namespace: tutorial
+  labels:
+    app: data-app
+    tutorial: storage
+spec:
+  containers:
+  - name: data-container
+    image: busybox:latest
+    command: ["/bin/sh", "-c", "sleep 3600"]
+    volumeMounts:
+    - name: data-volume
+      mountPath: /data
+  volumes:
+  - name: data-volume
+    persistentVolumeClaim:
+      claimName: tutorial-pvc
+

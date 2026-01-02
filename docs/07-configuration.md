@@ -263,6 +263,9 @@ This example demonstrates:
 - Database configuration pattern
 - Namespace assignment
 
+**📚 Tutorial:**
+- **[Configuration Tutorial](../../tutorials/05-configuration/README.md)** - Hands-on tutorial covering ConfigMaps and Secrets
+
 **To use this example:**
 ```bash
 # Apply the ConfigMap
@@ -632,6 +635,9 @@ This example demonstrates:
 - Base64-encoded sensitive data (MYSQL_ROOT_PASSWORD)
 - Database password pattern
 - Namespace assignment
+
+**📚 Tutorial:**
+- **[Configuration Tutorial](../../tutorials/05-configuration/README.md)** - Step-by-step tutorial to create and use ConfigMaps and Secrets
 
 **To use this example:**
 ```bash

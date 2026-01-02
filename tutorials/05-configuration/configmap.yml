@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-config
+  namespace: tutorial
+data:
+  APP_NAME: "My Application"
+  APP_ENV: "development"
+  APP_DATABASE_NAME: "devdb"
+  APP_LOG_LEVEL: "info"
+  app.properties: |
+    database.host=localhost
+    database.port=5432
+    cache.enabled=true
+

@@ -1,0 +1,27 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: preferred-affinity-pod
+  namespace: tutorial
+  labels:
+    app: preferred-app
+    tutorial: advanced
+spec:
+  affinity:
+    nodeAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        preference:
+          matchExpressions:
+          - key: instance-type
+            operator: In
+            values:
+            - large
+  containers:
+  - name: app
+    image: nginx:latest
+    resources:
+      requests:
+        memory: "64Mi"
+        cpu: "100m"
+

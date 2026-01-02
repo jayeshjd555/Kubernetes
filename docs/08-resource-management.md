@@ -8,6 +8,9 @@ Kubernetes provides multiple levels of resource management:
 3. **Namespace Level** - Resource Quotas for entire namespace
 4. **Cluster Level** - Total cluster capacity
 
+**📚 Tutorial:**
+- **[Resource Management Tutorial](../../tutorials/06-resource-management/README.md)** - Hands-on tutorial covering Resource Quotas and LimitRange
+
 ### Resource Requests and Limits
 
 **Requests** and **Limits** are specified at the container level and control CPU and memory allocation.

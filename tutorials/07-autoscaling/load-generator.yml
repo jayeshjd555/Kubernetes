@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: load-generator
+  namespace: tutorial
+  labels:
+    app: load-gen
+    tutorial: autoscaling
+spec:
+  containers:
+  - name: generator
+    image: busybox:latest
+    command: ["/bin/sh", "-c"]
+    args:
+    - |
+      while true; do
+        wget -q -O- http://webapp-service:80 > /dev/null 2>&1
+        sleep 0.1
+      done
+

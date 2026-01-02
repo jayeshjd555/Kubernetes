@@ -242,6 +242,9 @@ spec:
 
 > **📁 Reference:** See example YAML file: [`apache/hpa.yaml`](../apache/hpa.yaml)
 
+**📚 Tutorial:**
+- **[Autoscaling Tutorial](../../tutorials/07-autoscaling/README.md)** - Step-by-step tutorial to set up and test HPA
+
 ```yaml
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler

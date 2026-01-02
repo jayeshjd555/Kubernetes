@@ -1204,6 +1204,9 @@ spec:
 
 Node Affinity provides powerful and flexible control over pod scheduling, allowing you to optimize resource usage, comply with requirements, and ensure workloads run on appropriate nodes.
 
+**📚 Tutorial:**
+- **[Advanced Topics Tutorial](../../tutorials/08-advanced/README.md)** - Hands-on tutorial covering Node Affinity and RBAC
+
 </details>
 
 ---
@@ -2074,5 +2077,8 @@ roleRef:
 10. **Groups over users** - Easier to manage
 
 RBAC is essential for securing Kubernetes clusters and ensuring proper access control. Always follow the principle of least privilege and regularly audit your RBAC configurations.
+
+**📚 Tutorial:**
+- **[Advanced Topics Tutorial](../../tutorials/08-advanced/README.md)** - Step-by-step tutorial to create Roles, RoleBindings, and test RBAC permissions
 
 </details>

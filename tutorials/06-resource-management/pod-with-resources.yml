@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: resource-pod
+  namespace: tutorial-resources
+  labels:
+    app: resource-app
+    tutorial: resource-management
+spec:
+  containers:
+  - name: app
+    image: nginx:latest
+    resources:
+      requests:
+        memory: "128Mi"
+        cpu: "100m"
+      limits:
+        memory: "256Mi"
+        cpu: "200m"
+

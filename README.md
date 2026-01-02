@@ -71,6 +71,27 @@
 
 ---
 
+## 🎓 Hands-On Tutorials
+
+Practice what you learn with step-by-step tutorials:
+
+1. **[Core Concepts Tutorial](./tutorials/01-core-concepts/README.md)** - Namespaces and Pods
+2. **[Workloads Tutorial](./tutorials/02-workloads/README.md)** - Deployments and ReplicaSets
+3. **[Storage Tutorial](./tutorials/03-storage/README.md)** - PersistentVolumes and PersistentVolumeClaims
+4. **[Networking Tutorial](./tutorials/04-networking/README.md)** - Services and Ingress
+5. **[Configuration Tutorial](./tutorials/05-configuration/README.md)** - ConfigMaps and Secrets
+6. **[Resource Management Tutorial](./tutorials/06-resource-management/README.md)** - Resource Quotas and Limits
+7. **[Autoscaling Tutorial](./tutorials/07-autoscaling/README.md)** - Horizontal Pod Autoscaler (HPA)
+8. **[Advanced Topics Tutorial](./tutorials/08-advanced/README.md)** - RBAC and Node Affinity
+
+Each tutorial includes:
+- Step-by-step instructions
+- YAML files ready to use
+- Troubleshooting guides
+- Best practices
+
+---
+
 ## Repository Structure
 
 ```
@@ -87,6 +108,48 @@ Kubernetes/
 │   ├── 08-resource-management.md
 │   ├── 09-autoscaling.md
 │   └── 10-advanced.md
+├── tutorials/
+│   ├── 01-core-concepts/
+│   │   ├── README.md
+│   │   ├── namespace.yml
+│   │   └── pod.yml
+│   ├── 02-workloads/
+│   │   ├── README.md
+│   │   └── deployment.yml
+│   ├── 03-storage/
+│   │   ├── README.md
+│   │   ├── persistentvolume.yml
+│   │   ├── persistentvolumeclaim.yml
+│   │   └── pod-with-pvc.yml
+│   ├── 04-networking/
+│   │   ├── README.md
+│   │   ├── deployment.yml
+│   │   ├── service.yml
+│   │   └── ingress.yml
+│   ├── 05-configuration/
+│   │   ├── README.md
+│   │   ├── configmap.yml
+│   │   ├── secret.yml
+│   │   ├── pod-with-configmap.yml
+│   │   └── pod-with-secret.yml
+│   ├── 06-resource-management/
+│   │   ├── README.md
+│   │   ├── namespace.yml
+│   │   ├── resourcequota.yml
+│   │   ├── limitrange.yml
+│   │   └── pod-with-resources.yml
+│   ├── 07-autoscaling/
+│   │   ├── README.md
+│   │   ├── deployment.yml
+│   │   ├── service.yml
+│   │   ├── hpa.yml
+│   │   └── load-generator.yml
+│   └── 08-advanced/
+│       ├── README.md
+│       ├── serviceaccount.yml
+│       ├── role.yml
+│       ├── rolebinding.yml
+│       └── pod-with-sa.yml
 ├── nginx/ (example YAML files)
 ├── mysql/ (example YAML files)
 └── apache/ (example YAML files)

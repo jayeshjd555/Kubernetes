@@ -187,6 +187,9 @@ This example demonstrates:
 - ReplicaSet structure with replicas
 - Label selector configuration
 - Pod template definition
+
+**📚 Tutorial:**
+- **[Workloads Tutorial](../../tutorials/02-workloads/README.md)** - Hands-on tutorial covering Deployments and ReplicaSets
 - Basic ReplicaSet pattern
 
 **To use this example:**
@@ -507,6 +510,9 @@ For a practical example of a Deployment YAML file, check out:
 This example demonstrates:
 - Deployment structure with replicas
 - Label selector configuration
+
+**📚 Tutorial:**
+- **[Workloads Tutorial](../../tutorials/02-workloads/README.md)** - Step-by-step tutorial to create, scale, and update Deployments
 - Pod template definition
 - Basic Deployment pattern
 

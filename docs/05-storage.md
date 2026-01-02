@@ -422,6 +422,9 @@ This example demonstrates:
 - HostPath volume source (local storage)
 - StorageClass assignment
 - Reclaim policy configuration
+
+**📚 Tutorial:**
+- **[Storage Tutorial](../../tutorials/03-storage/README.md)** - Hands-on tutorial covering PVs, PVCs, and data persistence
 - Basic PV pattern for local storage
 
 **To use this example:**
@@ -640,6 +643,9 @@ This example demonstrates:
 - Storage resource request
 - StorageClass assignment
 - Basic PVC pattern for storage request
+
+**📚 Tutorial:**
+- **[Storage Tutorial](../../tutorials/03-storage/README.md)** - Step-by-step tutorial to create and use PVs and PVCs
 
 **To use this example:**
 ```bash

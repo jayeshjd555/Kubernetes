@@ -442,6 +442,9 @@ This example demonstrates:
 - Service structure with selector
 - Port configuration (port and targetPort)
 - ClusterIP service type (default)
+
+**📚 Tutorial:**
+- **[Networking Tutorial](../../tutorials/04-networking/README.md)** - Hands-on tutorial covering Services and Ingress
 - Basic Service pattern for nginx
 
 **To use this example:**
@@ -1252,6 +1255,9 @@ This example demonstrates:
 - Multiple backend services (nginx-service and notes-app-service)
 - Different port configurations (80 and 8000)
 - Path ordering (more specific path `/nginx` before default path `/`)
+
+**📚 Tutorial:**
+- **[Networking Tutorial](../../tutorials/04-networking/README.md)** - Step-by-step tutorial to create Services and configure Ingress
 
 **To use this example:**
 ```bash
