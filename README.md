@@ -58,6 +58,11 @@
     - [Node Affinity](./docs/10-advanced.md#node-affinity)
     - [RBAC - Role-Based Access Control](./docs/10-advanced.md#rbac---role-based-access-control)
 
+11. [Logging and Monitoring](./docs/11-logging-monitoring.md)
+    - [Kubernetes Logging](./docs/11-logging-monitoring.md#kubernetes-logging)
+    - [Kubernetes Monitoring](./docs/11-logging-monitoring.md#kubernetes-monitoring)
+    - [Observability Stack](./docs/11-logging-monitoring.md#observability-stack)
+
 ---
 
 ## Quick Navigation
@@ -68,6 +73,7 @@
 - 🌐 [Networking](./docs/06-networking.md)
 - ⚙️ [Configuration](./docs/07-configuration.md)
 - 📈 [Autoscaling](./docs/09-autoscaling.md)
+- 📊 [Logging and Monitoring](./docs/11-logging-monitoring.md)
 
 ---
 
@@ -83,6 +89,7 @@ Practice what you learn with step-by-step tutorials:
 6. **[Resource Management Tutorial](./tutorials/06-resource-management/README.md)** - Resource Quotas and Limits
 7. **[Autoscaling Tutorial](./tutorials/07-autoscaling/README.md)** - Horizontal Pod Autoscaler (HPA)
 8. **[Advanced Topics Tutorial](./tutorials/08-advanced/README.md)** - RBAC and Node Affinity
+9. **[Logging and Monitoring Tutorial](./tutorials/09-logging-monitoring/README.md)** - Log Collection and Monitoring Setup
 
 Each tutorial includes:
 - Step-by-step instructions
@@ -107,7 +114,8 @@ Kubernetes/
 │   ├── 07-configuration.md
 │   ├── 08-resource-management.md
 │   ├── 09-autoscaling.md
-│   └── 10-advanced.md
+│   ├── 10-advanced.md
+│   └── 11-logging-monitoring.md
 ├── tutorials/
 │   ├── 01-core-concepts/
 │   │   ├── README.md
@@ -150,6 +158,12 @@ Kubernetes/
 │       ├── role.yml
 │       ├── rolebinding.yml
 │       └── pod-with-sa.yml
+│   └── 09-logging-monitoring/
+│       ├── README.md
+│       ├── namespace.yml
+│       ├── fluentd-daemonset.yml
+│       ├── prometheus-deployment.yml
+│       └── grafana-deployment.yml
 ├── nginx/ (example YAML files)
 ├── mysql/ (example YAML files)
 └── apache/ (example YAML files)
