@@ -136,6 +136,8 @@
 - **Abbreviation:** Often called **K8s** (K + 8 letters + s)
 - **Symbolism:** Represents steering/guiding containerized applications
 
+</details>
+
 ---
 
 <details>
