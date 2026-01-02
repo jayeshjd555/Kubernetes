@@ -26,6 +26,7 @@
      - [PersistentVolume](#persistentvolume-pv)
      - [PersistentVolumeClaim](#persistentvolumeclaim-pvc)
    - [Services](#services)
+   - [Ingress](#ingress)
 
 ---
 
@@ -6744,3 +6745,774 @@ kubectl get svc nginx-service -n nginx -o jsonpath='{.spec.clusterIP}'
 8. **Essential for Pod communication** - Pods communicate via Services
 
 Services are essential for networking in Kubernetes. They provide the stable, reliable way to access your applications regardless of Pod changes.
+
+---
+
+## Ingress
+
+**Ingress** is an API object that manages external HTTP and HTTPS access to Services in a cluster. It provides HTTP/HTTPS routing, SSL/TLS termination, and name-based virtual hosting.
+
+### What is Ingress?
+
+**Simple Explanation:**
+Ingress is like a **smart traffic director** at the entrance of your cluster. It:
+- **Routes traffic** based on URL paths and hostnames
+- **Terminates SSL/TLS** - Handles HTTPS certificates
+- **Provides a single entry point** - One IP for multiple services
+- **Works with Services** - Routes to ClusterIP Services
+
+**Analogy:**
+Think of Ingress as a **receptionist** in a building:
+- **Services** = Individual offices (ClusterIP services are internal)
+- **Ingress** = Receptionist who directs visitors to the right office based on who they're looking for
+- **Ingress Controller** = The actual person/system doing the directing
+
+### Why Do We Need Ingress?
+
+**The Problem with Services:**
+- **LoadBalancer:** Creates one load balancer per service (expensive)
+- **NodePort:** Requires managing ports and firewall rules
+- **No path-based routing:** Can't route based on URL paths
+- **No SSL termination:** Each service needs to handle SSL
+- **No name-based routing:** Can't route based on domain names
+
+**The Solution - Ingress:**
+- **Single entry point** - One load balancer for multiple services
+- **Path-based routing** - Route `/api` to one service, `/web` to another
+- **Host-based routing** - Route `api.example.com` to one service, `web.example.com` to another
+- **SSL/TLS termination** - Handle certificates at Ingress level
+- **Cost-effective** - One load balancer instead of many
+
+### Ingress vs Services
+
+| Feature | Service | Ingress |
+|---------|---------|---------|
+| **Layer** | L4 (TCP/UDP) | L7 (HTTP/HTTPS) |
+| **Routing** | IP/Port based | Path/Host based |
+| **SSL/TLS** | No termination | SSL/TLS termination |
+| **External Access** | NodePort/LoadBalancer | HTTP/HTTPS routing |
+| **Cost** | One LB per service | One LB for all |
+| **Use Case** | Internal/external access | HTTP/HTTPS routing |
+
+### Ingress Architecture Diagram
+
+```mermaid
+graph TB
+    Internet[Internet]
+    
+    Internet -->|HTTP/HTTPS| LB[Load Balancer<br/>External IP]
+    
+    LB -->|Routes Traffic| IC[Ingress Controller<br/>Pod in Cluster]
+    
+    IC -->|Reads Rules| Ingress[Ingress Resource<br/>Routing Rules]
+    
+    Ingress -->|Path: /api| SVC1[Service: api-service<br/>ClusterIP]
+    Ingress -->|Path: /web| SVC2[Service: web-service<br/>ClusterIP]
+    Ingress -->|Host: api.example.com| SVC1
+    Ingress -->|Host: web.example.com| SVC2
+    
+    SVC1 -->|Routes to| Pod1[API Pods]
+    SVC2 -->|Routes to| Pod2[Web Pods]
+    
+    style LB fill:#326ce5,color:#fff
+    style IC fill:#4fc3f7,color:#000
+    style Ingress fill:#90caf9,color:#000
+    style SVC1 fill:#e3f2fd,color:#000
+    style SVC2 fill:#e3f2fd,color:#000
+    style Pod1 fill:#f4a261,color:#000
+    style Pod2 fill:#f4a261,color:#000
+```
+
+### Ingress Controller
+
+**What is an Ingress Controller?**
+
+An Ingress Controller is the **actual implementation** that processes Ingress rules. It's a Pod that:
+- **Watches Ingress resources** - Monitors for Ingress changes
+- **Implements routing rules** - Processes routing logic
+- **Handles SSL/TLS** - Terminates SSL connections
+- **Manages load balancer** - Configures external load balancer
+
+**Popular Ingress Controllers:**
+- **NGINX Ingress Controller** - Most popular
+- **Traefik** - Modern, feature-rich
+- **HAProxy** - High performance
+- **Istio Gateway** - Service mesh integration
+- **AWS ALB Ingress Controller** - AWS-specific
+- **GKE Ingress** - Google Cloud
+
+**Important:**
+- Ingress Controller must be **installed separately**
+- Kubernetes doesn't provide a default Ingress Controller
+- You need to deploy one before using Ingress
+
+### Ingress Structure
+
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: example-ingress
+  namespace: default
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: api.example.com
+    http:
+      paths:
+      - path: /api
+        pathType: Prefix
+        backend:
+          service:
+            name: api-service
+            port:
+              number: 80
+  - host: web.example.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: web-service
+            port:
+              number: 80
+  tls:
+  - hosts:
+    - api.example.com
+    - web.example.com
+    secretName: tls-secret
+```
+
+### Ingress Spec Fields Explained
+
+**apiVersion:**
+- API version for Ingress
+- Required: `networking.k8s.io/v1` (v1.19+)
+- Older: `networking.k8s.io/v1beta1` (deprecated)
+
+**kind:**
+- Object type
+- Required: `Ingress`
+
+**metadata:**
+- Object metadata
+- **name:** Ingress name (required)
+- **namespace:** Namespace (optional, defaults to default)
+- **labels:** Key-value pairs for organization
+- **annotations:** Ingress Controller-specific settings
+  - Controller-specific annotations for configuration
+
+**spec:**
+- Ingress specification
+- **ingressClassName:** Ingress class name (v1.19+)
+  - Specifies which Ingress Controller to use
+  - Alternative to `kubernetes.io/ingress.class` annotation
+- **rules:** List of routing rules (required)
+  - **host:** Hostname (optional, matches all if not specified)
+  - **http:** HTTP rules
+    - **paths:** List of path rules
+      - **path:** URL path (e.g., `/api`, `/web`)
+      - **pathType:** Path matching type
+        - **Exact:** Exact match
+        - **Prefix:** Prefix match (most common)
+        - **ImplementationSpecific:** Controller-specific
+      - **backend:** Backend service
+        - **service:** Service backend
+          - **name:** Service name
+          - **port:** Service port
+            - **number:** Port number
+            - **name:** Named port
+- **tls:** TLS configuration (optional)
+  - **hosts:** List of hostnames
+  - **secretName:** Secret containing TLS certificate
+
+### Ingress Routing Types
+
+#### 1. Host-Based Routing
+
+Routes traffic based on the **hostname** (domain name).
+
+**Example:**
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: host-based-ingress
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: api.example.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: api-service
+            port:
+              number: 80
+  - host: web.example.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: web-service
+            port:
+              number: 80
+```
+
+**How it works:**
+- `api.example.com` → routes to `api-service`
+- `web.example.com` → routes to `web-service`
+
+#### 2. Path-Based Routing
+
+Routes traffic based on the **URL path**.
+
+**Example:**
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: path-based-ingress
+spec:
+  ingressClassName: nginx
+  rules:
+  - http:
+      paths:
+      - path: /api
+        pathType: Prefix
+        backend:
+          service:
+            name: api-service
+            port:
+              number: 80
+      - path: /web
+        pathType: Prefix
+        backend:
+          service:
+            name: web-service
+            port:
+              number: 80
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: default-service
+            port:
+              number: 80
+```
+
+**How it works:**
+- `/api/*` → routes to `api-service`
+- `/web/*` → routes to `web-service`
+- `/*` → routes to `default-service`
+
+**Important:** Order matters! More specific paths should come first.
+
+#### 3. Combined Host and Path Routing
+
+Combines both hostname and path for routing.
+
+**Example:**
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: combined-ingress
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: example.com
+    http:
+      paths:
+      - path: /api
+        pathType: Prefix
+        backend:
+          service:
+            name: api-service
+            port:
+              number: 80
+      - path: /web
+        pathType: Prefix
+        backend:
+          service:
+            name: web-service
+            port:
+              number: 80
+```
+
+### Path Types Explained
+
+**1. Exact:**
+- Exact match of the path
+- `/api` matches only `/api`, not `/api/v1`
+
+**2. Prefix:**
+- Matches path prefix
+- `/api` matches `/api`, `/api/v1`, `/api/users`
+- Most commonly used
+
+**3. ImplementationSpecific:**
+- Controller-specific matching
+- Behavior depends on Ingress Controller
+
+### Ingress Routing Diagram
+
+```mermaid
+graph TB
+    User[User Request]
+    
+    User -->|api.example.com/api/users| Ingress[Ingress Controller]
+    
+    Ingress -->|Host: api.example.com| Rule1[Rule 1: api.example.com]
+    Ingress -->|Host: web.example.com| Rule2[Rule 2: web.example.com]
+    Ingress -->|Path: /api| Rule3[Rule 3: Path /api]
+    Ingress -->|Path: /web| Rule4[Rule 4: Path /web]
+    
+    Rule1 -->|Routes to| SVC1[api-service:80]
+    Rule2 -->|Routes to| SVC2[web-service:80]
+    Rule3 -->|Routes to| SVC1
+    Rule4 -->|Routes to| SVC2
+    
+    SVC1 --> Pod1[API Pods]
+    SVC2 --> Pod2[Web Pods]
+    
+    style Ingress fill:#326ce5,color:#fff
+    style Rule1 fill:#90caf9,color:#000
+    style Rule2 fill:#90caf9,color:#000
+    style Rule3 fill:#90caf9,color:#000
+    style Rule4 fill:#90caf9,color:#000
+    style SVC1 fill:#e3f2fd,color:#000
+    style SVC2 fill:#e3f2fd,color:#000
+    style Pod1 fill:#f4a261,color:#000
+    style Pod2 fill:#f4a261,color:#000
+```
+
+### TLS/SSL Termination
+
+Ingress can handle SSL/TLS termination, so your Services don't need to.
+
+**How it works:**
+1. Client connects via HTTPS
+2. Ingress Controller terminates SSL
+3. Forwards HTTP to backend Service
+4. Service receives plain HTTP
+
+**Example:**
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: tls-ingress
+spec:
+  ingressClassName: nginx
+  tls:
+  - hosts:
+    - api.example.com
+    - web.example.com
+    secretName: tls-secret
+  rules:
+  - host: api.example.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: api-service
+            port:
+              number: 80
+```
+
+**Creating TLS Secret:**
+```bash
+# Create TLS secret
+kubectl create secret tls tls-secret \
+  --cert=tls.crt \
+  --key=tls.key
+```
+
+### Ingress Annotations
+
+Ingress Controllers use annotations for additional configuration.
+
+**NGINX Ingress Controller Annotations:**
+
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: annotated-ingress
+  annotations:
+    # Rewrite target
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    
+    # SSL redirect
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    
+    # Rate limiting
+    nginx.ingress.kubernetes.io/limit-rps: "100"
+    
+    # CORS
+    nginx.ingress.kubernetes.io/enable-cors: "true"
+    
+    # Authentication
+    nginx.ingress.kubernetes.io/auth-type: basic
+    nginx.ingress.kubernetes.io/auth-secret: basic-auth
+    
+    # Custom headers
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      more_set_headers "X-Custom-Header: value";
+spec:
+  ingressClassName: nginx
+  rules:
+  - http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: web-service
+            port:
+              number: 80
+```
+
+### Ingress Class
+
+**What is Ingress Class?**
+
+Ingress Class allows you to have multiple Ingress Controllers in the same cluster.
+
+**IngressClass Resource:**
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: IngressClass
+metadata:
+  name: nginx
+spec:
+  controller: k8s.io/ingress-nginx
+```
+
+**Using IngressClass:**
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: example-ingress
+spec:
+  ingressClassName: nginx  # References IngressClass
+  rules:
+  - http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: web-service
+            port:
+              number: 80
+```
+
+### Creating Ingress
+
+**Method 1: Using YAML**
+
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: example-ingress
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: api.example.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: api-service
+            port:
+              number: 80
+```
+
+```bash
+kubectl apply -f ingress.yaml
+```
+
+**Method 2: Using kubectl**
+
+```bash
+# Create Ingress from Service
+kubectl create ingress example-ingress \
+  --class=nginx \
+  --rule="api.example.com/*=api-service:80" \
+  --rule="web.example.com/*=web-service:80"
+```
+
+### Managing Ingress
+
+```bash
+# List Ingresses
+kubectl get ingress
+kubectl get ing
+
+# List Ingresses in namespace
+kubectl get ing -n <namespace>
+
+# Get Ingress details
+kubectl get ing <ingress-name>
+
+# Describe Ingress
+kubectl describe ing <ingress-name>
+
+# Get Ingress YAML
+kubectl get ing <ingress-name> -o yaml
+
+# Delete Ingress
+kubectl delete ing <ingress-name>
+```
+
+### Installing Ingress Controller
+
+**NGINX Ingress Controller (Example):**
+
+```bash
+# Using kubectl
+kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.8.1/deploy/static/provider/cloud/deploy.yaml
+
+# Using Helm
+helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
+helm install ingress-nginx ingress-nginx/ingress-nginx
+
+# Check installation
+kubectl get pods -n ingress-nginx
+kubectl get svc -n ingress-nginx
+```
+
+### Ingress Controller Architecture
+
+```mermaid
+graph TB
+    LB[Load Balancer<br/>External IP]
+    
+    LB -->|Routes to| IC[Ingress Controller<br/>Pod with Service<br/>Type: LoadBalancer]
+    
+    IC -->|Watches| Ingress1[Ingress Resource 1]
+    IC -->|Watches| Ingress2[Ingress Resource 2]
+    
+    IC -->|Reads Rules| Rules[Routing Rules]
+    
+    Rules -->|Routes| SVC1[Service 1]
+    Rules -->|Routes| SVC2[Service 2]
+    Rules -->|Routes| SVC3[Service 3]
+    
+    SVC1 --> Pod1[Pods]
+    SVC2 --> Pod2[Pods]
+    SVC3 --> Pod3[Pods]
+    
+    style LB fill:#326ce5,color:#fff
+    style IC fill:#4fc3f7,color:#000
+    style Ingress1 fill:#90caf9,color:#000
+    style Ingress2 fill:#90caf9,color:#000
+    style SVC1 fill:#e3f2fd,color:#000
+    style SVC2 fill:#e3f2fd,color:#000
+    style SVC3 fill:#e3f2fd,color:#000
+```
+
+### Complete Ingress Example
+
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: complete-ingress
+  namespace: production
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/rate-limit: "100"
+spec:
+  ingressClassName: nginx
+  rules:
+  # Host-based routing
+  - host: api.example.com
+    http:
+      paths:
+      - path: /v1
+        pathType: Prefix
+        backend:
+          service:
+            name: api-v1-service
+            port:
+              number: 80
+      - path: /v2
+        pathType: Prefix
+        backend:
+          service:
+            name: api-v2-service
+            port:
+              number: 80
+  # Path-based routing
+  - http:
+      paths:
+      - path: /web
+        pathType: Prefix
+        backend:
+          service:
+            name: web-service
+            port:
+              number: 80
+      - path: /admin
+        pathType: Prefix
+        backend:
+          service:
+            name: admin-service
+            port:
+              number: 80
+  # TLS configuration
+  tls:
+  - hosts:
+    - api.example.com
+    secretName: api-tls-secret
+```
+
+### Ingress Best Practices
+
+1. **Install Ingress Controller first** - Required before using Ingress
+2. **Use ingressClassName** - Specify which controller to use
+3. **Order paths correctly** - More specific paths first
+4. **Use pathType: Prefix** - Most common and flexible
+5. **Handle TLS at Ingress** - Don't handle SSL in Services
+6. **Use annotations wisely** - Controller-specific features
+7. **Monitor Ingress Controller** - Check controller health
+8. **Use meaningful names** - For better organization
+9. **Test routing rules** - Verify paths work correctly
+10. **Secure with TLS** - Use TLS for production
+
+### Common Ingress Patterns
+
+**Pattern 1: Simple Path Routing**
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: simple-ingress
+spec:
+  ingressClassName: nginx
+  rules:
+  - http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: web-service
+            port:
+              number: 80
+```
+
+**Pattern 2: Multiple Services**
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: multi-service-ingress
+spec:
+  ingressClassName: nginx
+  rules:
+  - http:
+      paths:
+      - path: /api
+        pathType: Prefix
+        backend:
+          service:
+            name: api-service
+            port:
+              number: 80
+      - path: /web
+        pathType: Prefix
+        backend:
+          service:
+            name: web-service
+            port:
+              number: 80
+```
+
+**Pattern 3: Host-Based with TLS**
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: tls-host-ingress
+spec:
+  ingressClassName: nginx
+  tls:
+  - hosts:
+    - api.example.com
+    secretName: api-tls-secret
+  rules:
+  - host: api.example.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: api-service
+            port:
+              number: 80
+```
+
+### Troubleshooting Ingress
+
+**Common Issues:**
+
+1. **Ingress not working:**
+   ```bash
+   # Check Ingress Controller
+   kubectl get pods -n ingress-nginx
+   
+   # Check Ingress status
+   kubectl describe ing <ingress-name>
+   
+   # Check Service
+   kubectl get svc <service-name>
+   ```
+
+2. **404 errors:**
+   - Check path matching
+   - Verify pathType
+   - Check Service name and port
+
+3. **SSL errors:**
+   - Verify TLS secret exists
+   - Check certificate validity
+   - Verify secret name matches
+
+4. **Routing not working:**
+   - Check Ingress Controller logs
+   - Verify rules are correct
+   - Check Service endpoints
+
+### Key Takeaways
+
+1. **Ingress provides HTTP/HTTPS routing** - Layer 7 routing
+2. **Requires Ingress Controller** - Must be installed separately
+3. **Path and host-based routing** - Flexible routing options
+4. **SSL/TLS termination** - Handle certificates at Ingress
+5. **Single entry point** - One load balancer for multiple services
+6. **Works with Services** - Routes to ClusterIP Services
+7. **Controller-specific** - Annotations vary by controller
+8. **Cost-effective** - One LB instead of many
+9. **Use ingressClassName** - Specify controller (v1.19+)
+10. **Order matters** - More specific paths first
+
+Ingress is essential for managing external HTTP/HTTPS access to your Kubernetes services. It provides a powerful, flexible way to route traffic based on paths and hostnames while handling SSL/TLS termination.
