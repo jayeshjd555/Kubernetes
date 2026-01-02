@@ -7598,11 +7598,11 @@ graph TB
     CM -->|Provides| Pod2[Pod 2<br/>Uses ConfigMap]
     CM -->|Provides| Pod3[Pod 3<br/>Uses ConfigMap]
     
-    Pod1 -->|Environment Variables| Env1[ENV_VAR=value]
-    Pod1 -->|Config Files| File1[/etc/config/app.conf]
+    Pod1 -->|Environment Variables| Env1[ENV_VAR equals value]
+    Pod1 -->|Config Files| File1[Config File Mount]
     
-    Pod2 -->|Environment Variables| Env2[ENV_VAR=value]
-    Pod3 -->|Command Args| Args[--config=value]
+    Pod2 -->|Environment Variables| Env2[ENV_VAR equals value]
+    Pod3 -->|Command Args| Args[Command Arguments]
     
     style CM fill:#326ce5,color:#fff
     style Pod1 fill:#f4a261,color:#000
@@ -7898,10 +7898,10 @@ graph TB
     Secret -->|Provides| Pod1[Pod 1<br/>Uses Secret]
     Secret -->|Provides| Pod2[Pod 2<br/>Uses Secret]
     
-    Pod1 -->|Environment Variables| Env1[PASSWORD=***]
-    Pod1 -->|Volume Mount| File1[/etc/secrets/password]
+    Pod1 -->|Environment Variables| Env1[PASSWORD masked]
+    Pod1 -->|Volume Mount| File1[Secret File Mount]
     
-    Pod2 -->|Environment Variables| Env2[API_KEY=***]
+    Pod2 -->|Environment Variables| Env2[API_KEY masked]
     
     Secret -.->|RBAC Controls| Access[Access Control]
     
