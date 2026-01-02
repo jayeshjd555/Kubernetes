@@ -25,6 +25,7 @@
      - [StorageClass](#storageclass)
      - [PersistentVolume](#persistentvolume-pv)
      - [PersistentVolumeClaim](#persistentvolumeclaim-pvc)
+   - [Services](#services)
 
 ---
 
@@ -6258,3 +6259,488 @@ kubectl get pvc local-pvc -n nginx
 4. **Use labels** - For PV selection
 5. **Monitor storage** - Check PV/PVC status
 6. **Clean up** - Delete unused PVCs and PVs
+
+---
+
+## Services
+
+**Services** provide a stable network endpoint to access Pods. They abstract away the dynamic nature of Pods and provide a consistent way to communicate with applications running in Kubernetes.
+
+### What is a Service?
+
+Think of a Service as a **stable front door** to your application. Here's why we need Services:
+
+**The Problem:**
+- Pods are **ephemeral** - They can be created, destroyed, or moved
+- Pods get **new IP addresses** each time they're created
+- How do you connect to an application when its IP keeps changing?
+
+**The Solution:**
+- Service provides a **stable IP address** and DNS name
+- Service **load balances** traffic to multiple Pods
+- Service **abstracts** the underlying Pods
+- Other applications connect to the Service, not directly to Pods
+
+**Simple Analogy:**
+Imagine a restaurant:
+- **Pods** = Individual waiters (they come and go)
+- **Service** = The host/hostess desk (always there, directs you to available waiters)
+- You don't need to know which waiter will serve you - you just go to the desk!
+
+### Why Do We Need Services?
+
+**1. Pod IPs are Dynamic**
+```
+Pod 1: 10.244.1.5  → Gets deleted
+Pod 2: 10.244.1.6  → Gets new IP: 10.244.1.10
+Pod 3: 10.244.1.7  → Gets new IP: 10.244.1.11
+```
+Without Service: Application breaks when Pod IPs change
+With Service: Service IP stays the same, routes to new Pod IPs
+
+**2. Load Balancing**
+- Multiple Pods running the same application
+- Service distributes traffic across all Pods
+- Automatic load balancing
+
+**3. Service Discovery**
+- Services get DNS names
+- Other Pods can find services by name
+- No need to hardcode IP addresses
+
+### Service Diagram
+
+```mermaid
+graph TB
+    Client[Client Application]
+    
+    Client -->|Connects to| SVC[Service<br/>nginx-service<br/>10.96.0.1:80<br/>DNS: nginx-service.default.svc]
+    
+    SVC -->|Load Balances| Pod1[Pod 1<br/>10.244.1.5:80<br/>app=nginx]
+    SVC -->|Load Balances| Pod2[Pod 2<br/>10.244.1.6:80<br/>app=nginx]
+    SVC -->|Load Balances| Pod3[Pod 3<br/>10.244.1.7:80<br/>app=nginx]
+    
+    Pod1 -.->|Dies| SVC
+    SVC -->|Routes to| Pod4[Pod 4<br/>10.244.1.10:80<br/>app=nginx<br/>Replacement]
+    
+    style SVC fill:#326ce5,color:#fff
+    style Pod1 fill:#f4a261,color:#000
+    style Pod2 fill:#f4a261,color:#000
+    style Pod3 fill:#f4a261,color:#000
+    style Pod4 fill:#90ee90,color:#000
+    style Client fill:#e3f2fd,color:#000
+```
+
+### Service Types
+
+Kubernetes provides different Service types for different use cases:
+
+**1. ClusterIP (Default)**
+- **Internal only** - Accessible only within the cluster
+- **Stable IP** - Gets a cluster-internal IP
+- **Use case:** Communication between Pods in the cluster
+
+**2. NodePort**
+- **External access** - Accessible from outside the cluster
+- **Opens port** - Opens a port on each node
+- **Use case:** Development, testing, simple external access
+
+**3. LoadBalancer**
+- **Cloud provider** - Creates external load balancer
+- **Public IP** - Gets a public IP address
+- **Use case:** Production applications with cloud providers
+
+**4. ExternalName**
+- **External service** - Maps to external DNS name
+- **No proxy** - Returns CNAME record
+- **Use case:** Accessing external services
+
+### Service Structure
+
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-service
+  namespace: nginx
+spec:
+  selector:
+    app: nginx
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+  type: ClusterIP
+```
+
+### Service Spec Fields Explained
+
+**apiVersion:**
+- API version for Service
+- Required: `v1`
+
+**kind:**
+- Object type
+- Required: `Service`
+
+**metadata:**
+- Object metadata
+- **name:** Service name (required) - Used for DNS
+- **namespace:** Namespace (optional, defaults to default)
+- **labels:** Key-value pairs for organization
+- **annotations:** Additional metadata
+
+**spec:**
+- Service specification
+- **selector:** Label selector to find Pods (required)
+  - **matchLabels:** Key-value pairs matching Pod labels
+  - Service routes traffic to Pods with matching labels
+- **ports:** Port configuration (required)
+  - **port:** Port exposed by Service
+  - **targetPort:** Port on Pods (defaults to port if not specified)
+  - **protocol:** TCP (default), UDP, or SCTP
+  - **name:** Port name (optional, for named ports)
+- **type:** Service type (optional, default: ClusterIP)
+  - **ClusterIP:** Internal cluster IP
+  - **NodePort:** Exposes on node IPs
+  - **LoadBalancer:** Creates external load balancer
+  - **ExternalName:** Maps to external DNS
+- **clusterIP:** Specific cluster IP (optional, auto-assigned if not specified)
+- **sessionAffinity:** Session affinity (optional)
+  - **None:** No session affinity (default)
+  - **ClientIP:** Route same client to same Pod
+
+### Service Types Explained
+
+#### 1. ClusterIP Service
+
+**What it is:**
+- Default Service type
+- Internal cluster IP address
+- Accessible only within the cluster
+
+**Use Case:**
+- Communication between Pods
+- Internal services
+- Database connections
+
+**Example:**
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-service
+spec:
+  type: ClusterIP  # Default, can be omitted
+  selector:
+    app: nginx
+  ports:
+    - port: 80
+      targetPort: 80
+```
+
+**Access:**
+- From within cluster: `http://nginx-service:80`
+- DNS: `nginx-service.default.svc.cluster.local`
+
+#### 2. NodePort Service
+
+**What it is:**
+- Opens a port on each node
+- Accessible from outside cluster via `<NodeIP>:<NodePort>`
+- Also accessible via ClusterIP
+
+**Use Case:**
+- Development and testing
+- Simple external access
+- When LoadBalancer is not available
+
+**Example:**
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-service
+spec:
+  type: NodePort
+  selector:
+    app: nginx
+  ports:
+    - port: 80
+      targetPort: 80
+      nodePort: 30080  # Optional, auto-assigned if not specified (30000-32767)
+```
+
+**Access:**
+- From outside: `http://<NodeIP>:30080`
+- From inside: `http://nginx-service:80`
+
+#### 3. LoadBalancer Service
+
+**What it is:**
+- Creates external load balancer (cloud provider)
+- Gets a public IP address
+- Automatically includes NodePort and ClusterIP
+
+**Use Case:**
+- Production applications
+- Public-facing services
+- Cloud environments (AWS, GCP, Azure)
+
+**Example:**
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-service
+spec:
+  type: LoadBalancer
+  selector:
+    app: nginx
+  ports:
+    - port: 80
+      targetPort: 80
+```
+
+**Access:**
+- Public IP provided by cloud provider
+- Automatically routes to Pods
+
+#### 4. ExternalName Service
+
+**What it is:**
+- Maps Service to external DNS name
+- Returns CNAME record
+- No proxy, no load balancing
+
+**Use Case:**
+- Accessing external services
+- Migrating to Kubernetes
+- Service abstraction
+
+**Example:**
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: external-db
+spec:
+  type: ExternalName
+  externalName: database.example.com
+```
+
+**Access:**
+- DNS resolves to external name
+- No proxy involved
+
+### Service Discovery
+
+**DNS Names:**
+- Services get DNS names automatically
+- Format: `<service-name>.<namespace>.svc.cluster.local`
+- Short form: `<service-name>` (same namespace)
+- Short form: `<service-name>.<namespace>` (different namespace)
+
+**Examples:**
+```bash
+# Same namespace
+http://nginx-service:80
+
+# Different namespace
+http://nginx-service.nginx:80
+
+# Full DNS name
+http://nginx-service.nginx.svc.cluster.local:80
+```
+
+### Creating Services
+
+**Method 1: Using YAML (Recommended)**
+
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-service
+  namespace: nginx
+spec:
+  selector:
+    app: nginx
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+  type: ClusterIP
+```
+
+```bash
+kubectl apply -f service.yaml
+```
+
+**Method 2: Using kubectl**
+
+```bash
+# Create Service from Deployment
+kubectl expose deployment nginx-deployment --port=80 --target-port=80
+
+# Create Service with specific type
+kubectl expose deployment nginx-deployment --type=NodePort --port=80
+
+# Create Service with LoadBalancer
+kubectl expose deployment nginx-deployment --type=LoadBalancer --port=80
+```
+
+### Managing Services
+
+```bash
+# List Services
+kubectl get services
+kubectl get svc
+
+# List Services in namespace
+kubectl get svc -n <namespace>
+
+# Get Service details
+kubectl get svc <service-name>
+
+# Describe Service
+kubectl describe svc <service-name>
+
+# Get Service endpoints
+kubectl get endpoints <service-name>
+
+# Delete Service
+kubectl delete svc <service-name>
+```
+
+### Service Endpoints
+
+**Endpoints:**
+- Service automatically creates Endpoints object
+- Contains list of Pod IPs matching selector
+- Updated automatically when Pods change
+
+```bash
+# View endpoints
+kubectl get endpoints <service-name>
+
+# Output shows:
+# NAME            ENDPOINTS
+# nginx-service   10.244.1.5:80,10.244.1.6:80,10.244.1.7:80
+```
+
+### Service Load Balancing
+
+**How it Works:**
+1. Service receives request
+2. kube-proxy routes to one of the Pods
+3. Uses round-robin by default
+4. Can use session affinity for sticky sessions
+
+**Load Balancing Methods:**
+- **Round-robin (default):** Distributes evenly
+- **Session affinity:** Same client to same Pod
+
+### Service Best Practices
+
+1. **Use meaningful names** - Service names become DNS names
+2. **Match selector labels** - Ensure selector matches Pod labels
+3. **Use ClusterIP for internal** - Default for internal communication
+4. **Use LoadBalancer for external** - For public-facing services
+5. **Set targetPort correctly** - Match container port
+6. **Use named ports** - For flexibility
+7. **Monitor endpoints** - Check if Pods are healthy
+
+### Common Service Patterns
+
+**Pattern 1: Basic Service**
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: web-service
+spec:
+  selector:
+    app: web
+  ports:
+    - port: 80
+      targetPort: 8080
+```
+
+**Pattern 2: Multiple Ports**
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: app-service
+spec:
+  selector:
+    app: myapp
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8080
+    - name: https
+      port: 443
+      targetPort: 8443
+```
+
+**Pattern 3: Headless Service**
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: headless-service
+spec:
+  clusterIP: None  # Headless service
+  selector:
+    app: stateful
+  ports:
+    - port: 80
+```
+
+### Example Reference
+
+For a practical example of a Service YAML file, check out:
+
+- **[nginx/service.yml](./nginx/service.yml)** - Example Service definition
+
+This example demonstrates:
+- Service structure with selector
+- Port configuration (port and targetPort)
+- ClusterIP service type (default)
+- Basic Service pattern for nginx
+
+**To use this example:**
+```bash
+# Apply the Service
+kubectl apply -f nginx/service.yml
+
+# View the Service
+kubectl get svc -n nginx
+
+# Check Service details
+kubectl describe svc nginx-service -n nginx
+
+# View Service endpoints (Pods it routes to)
+kubectl get endpoints nginx-service -n nginx
+
+# Test Service from within cluster
+kubectl run test-pod --image=busybox -it --rm --restart=Never -n nginx -- wget -qO- http://nginx-service:80
+
+# Get Service cluster IP
+kubectl get svc nginx-service -n nginx -o jsonpath='{.spec.clusterIP}'
+```
+
+### Key Takeaways
+
+1. **Services provide stable endpoints** - Stable IP and DNS name
+2. **Load balancing** - Distributes traffic across Pods
+3. **Service discovery** - DNS names for easy access
+4. **Different types** - ClusterIP, NodePort, LoadBalancer, ExternalName
+5. **Selector-based** - Routes to Pods matching labels
+6. **Automatic updates** - Endpoints update when Pods change
+7. **Internal by default** - ClusterIP for internal communication
+8. **Essential for Pod communication** - Pods communicate via Services
+
+Services are essential for networking in Kubernetes. They provide the stable, reliable way to access your applications regardless of Pod changes.
