@@ -10735,7 +10735,7 @@ Result: Scale up to 4 Pods
 ```mermaid
 graph TB
     subgraph "Metrics Collection"
-        MS[Metrics Server<br/>CPU/Memory Metrics]
+        MS[Metrics Server<br/>CPU Memory Metrics]
         PM[Prometheus<br/>Custom Metrics]
     end
     
@@ -10747,7 +10747,7 @@ graph TB
     subgraph "Target Resources"
         DEP[Deployment<br/>nginx-deployment]
         RS[ReplicaSet]
-        PODS[Pods<br/>1, 2, 3, ... N]
+        PODS[Pods<br/>Application Containers]
     end
     
     MS --> HPA
@@ -11053,13 +11053,13 @@ graph TB
     end
     
     subgraph "Metrics"
-        HIST[Historical Metrics<br/>CPU/Memory Usage]
+        HIST[Historical Metrics<br/>CPU Memory Usage]
     end
     
     subgraph "Target Pods"
-        POD1[Pod 1<br/>Current: 100m CPU]
-        POD2[Pod 2<br/>Current: 200m CPU]
-        POD3[Pod 3<br/>Recommended: 150m CPU]
+        POD1[Pod 1<br/>Current Resources]
+        POD2[Pod 2<br/>Current Resources]
+        POD3[Pod 3<br/>Recommended Resources]
     end
     
     HIST --> REC
@@ -11335,9 +11335,9 @@ Think of KEDA as an **event-driven staffing manager**:
 ```mermaid
 graph TB
     subgraph "Event Sources"
-        QUEUE[Message Queue<br/>RabbitMQ/Kafka]
-        DB[Database<br/>PostgreSQL/MySQL]
-        CLOUD[Cloud Services<br/>AWS SQS/Azure Queue]
+        QUEUE[Message Queue<br/>RabbitMQ Kafka]
+        DB[Database<br/>PostgreSQL MySQL]
+        CLOUD[Cloud Services<br/>AWS SQS Azure Queue]
     end
     
     subgraph "KEDA Components"
@@ -11353,7 +11353,7 @@ graph TB
     
     subgraph "Workload"
         DEP[Deployment<br/>Worker Pods]
-        PODS[Pods<br/>1, 2, 3, ... N]
+        PODS[Pods<br/>Application Containers]
     end
     
     QUEUE --> SCALER
@@ -11641,13 +11641,13 @@ Think of Cluster Autoscaler as an **automatic infrastructure manager**:
 graph TB
     subgraph "Kubernetes Cluster"
         SCHED[Scheduler<br/>Pod Scheduling]
-        PENDING[Pending Pods<br/>Can't Schedule]
+        PENDING[Pending Pods<br/>Cant Schedule]
     end
     
     subgraph "Cluster Autoscaler"
         CA[CA Controller<br/>Cluster Autoscaler]
         MON[Monitor<br/>Cluster State]
-        DEC[Decision Engine<br/>Scale Up/Down]
+        DEC[Decision Engine<br/>Scale Up Down]
     end
     
     subgraph "Cloud Provider"
@@ -11657,9 +11657,9 @@ graph TB
     end
     
     subgraph "Cluster Nodes"
-        NODE1[Node 1<br/>Utilization: 80%]
-        NODE2[Node 2<br/>Utilization: 20%]
-        NODE3[Node 3<br/>Utilization: 15%]
+        NODE1[Node 1<br/>High Utilization]
+        NODE2[Node 2<br/>Low Utilization]
+        NODE3[Node 3<br/>Low Utilization]
     end
     
     PENDING --> CA
