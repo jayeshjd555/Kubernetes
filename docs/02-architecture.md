@@ -120,7 +120,7 @@ The **control plane** (formerly called master node) is the **brain of the Kubern
 #### 1. API Server (kube-apiserver)
 
 **What it is:**
-The **API Server** is the **front-end for the Kubernetes control plane**. It's the central management point for the entire cluster.
+The **API Server** is the **front-end for the Kubernetes control plane**. It's the central management point for the entire cluster and the **only component that directly communicates with etcd**.
 
 **Simple Analogy:**
 Think of API Server as a **reception desk**:
@@ -128,47 +128,282 @@ Think of API Server as a **reception desk**:
 - Validates and processes requests
 - Routes requests to appropriate components
 - Returns responses to clients
+- Only authorized personnel can access the filing cabinet (etcd)
 
 **Responsibilities:**
 - **Exposes Kubernetes API:** RESTful API for all operations
-- **Validates Requests:** Ensures requests are valid
+- **Validates Requests:** Ensures requests are valid (schema validation)
 - **Authenticates & Authorizes:** Security layer for requests
+- **Admission Control:** Mutates/validates requests before persistence
 - **Updates etcd:** Stores cluster state in etcd
 - **Serves as Gateway:** Only component that talks to etcd directly
 - **Watches & Notifies:** Watches for changes and notifies components
+- **API Versioning:** Manages multiple API versions
+- **Rate Limiting:** Prevents API abuse
 
 **Key Features:**
 - **RESTful API:** Standard HTTP/JSON API
-- **Horizontal Scaling:** Can run multiple instances
+- **Horizontal Scaling:** Can run multiple instances (load balanced)
 - **Stateless:** Can be load balanced
 - **Secure:** Authentication and authorization built-in
 - **Extensible:** Supports custom resources and extensions
+- **Versioned API:** Multiple API versions (v1, apps/v1, etc.)
 
-**How it Works:**
+**API Server Architecture:**
+
+```mermaid
+graph TB
+    Client[kubectl/API Client] -->|1. Request| API[API Server]
+    
+    subgraph "API Server Processing Pipeline"
+        Auth[Authentication<br/>Who are you?]
+        Authz[Authorization<br/>What can you do?]
+        Admission[Admission Control<br/>Mutate/Validate]
+        Schema[Schema Validation<br/>Is it valid?]
+        etcdWrite[Write to etcd]
+    end
+    
+    API -->|2. Authenticate| Auth
+    Auth -->|3. Authorize| Authz
+    Authz -->|4. Admission| Admission
+    Admission -->|5. Validate| Schema
+    Schema -->|6. Persist| etcdWrite
+    etcdWrite -->|7. Read| etcd[etcd<br/>State Store]
+    
+    etcd -->|8. Response| API
+    API -->|9. Return| Client
+    
+    subgraph "Other Components"
+        Scheduler[Scheduler<br/>Watches for Pods]
+        Controller[Controllers<br/>Watch for Changes]
+        Kubelet[kubelet<br/>Watches for Pods]
+    end
+    
+    etcd -->|10. Watch Events| Scheduler
+    etcd -->|11. Watch Events| Controller
+    etcd -->|12. Watch Events| Kubelet
+    
+    style API fill:#326ce5,color:#fff
+    style etcd fill:#4fc3f7,color:#000
+    style Auth fill:#ff9800,color:#fff
+    style Authz fill:#ff9800,color:#fff
 ```
-User/Component → API Server → Validates → etcd → Response
+
+**Request Processing Flow:**
+
+**Step 1: Authentication**
+- **Purpose:** Verify who is making the request
+- **Methods:** Client certificates, bearer tokens, service accounts
+- **Result:** User identity (username, groups)
+
+**Step 2: Authorization**
+- **Purpose:** Determine what the user can do
+- **Methods:** RBAC, ABAC, Node authorization, Webhook
+- **Result:** Allow or deny the request
+
+**Step 3: Admission Control**
+- **Purpose:** Mutate or validate requests before persistence
+- **Types:**
+  - **Mutating:** Modify requests (e.g., add default values)
+  - **Validating:** Validate requests (e.g., enforce policies)
+- **Examples:** ResourceQuota, LimitRange, PodSecurityPolicy
+
+**Step 4: Schema Validation**
+- **Purpose:** Validate request against Kubernetes schema
+- **Checks:** Required fields, data types, constraints
+- **Result:** Valid or invalid request
+
+**Step 5: Persist to etcd**
+- **Purpose:** Store the object in etcd
+- **Operation:** Create, Update, or Delete
+- **Result:** Object stored in etcd
+
+**Step 6: Watch Events**
+- **Purpose:** Notify watching components
+- **Components:** Scheduler, Controllers, kubelet
+- **Result:** Components react to changes
+
+**API Versions:**
+
+Kubernetes supports multiple API versions for backward compatibility:
+
+**Core API Group (`/api/v1`):**
+- Pods, Services, ConfigMaps, Secrets, Namespaces
+- Most stable, widely used
+
+**Named API Groups:**
+- `apps/v1`: Deployments, ReplicaSets, StatefulSets, DaemonSets
+- `networking.k8s.io/v1`: Ingress, NetworkPolicy
+- `storage.k8s.io/v1`: StorageClass, PersistentVolume
+- `autoscaling/v2`: HorizontalPodAutoscaler
+
+**API Version Lifecycle:**
 ```
+alpha → beta → stable (v1) → deprecated → removed
+```
+
+**Example Request Flow:**
+
+```bash
+# User runs: kubectl create -f pod.yaml
+
+# 1. kubectl sends HTTP POST to API Server
+POST /api/v1/namespaces/default/pods
+{
+  "apiVersion": "v1",
+  "kind": "Pod",
+  "metadata": { "name": "my-pod" },
+  "spec": { ... }
+}
+
+# 2. API Server processes:
+#    - Authenticates: Validates client certificate
+#    - Authorizes: Checks RBAC permissions
+#    - Admission: Mutates/validates (adds defaults)
+#    - Schema: Validates YAML structure
+#    - etcd: Stores in etcd
+
+# 3. etcd stores the Pod object
+
+# 4. API Server returns success response
+
+# 5. Scheduler watches etcd, sees new Pod, schedules it
+```
+
+**Authentication Methods:**
+
+**1. Client Certificates:**
+```yaml
+# kubeconfig file
+users:
+- name: admin
+  user:
+    client-certificate: /path/to/cert.crt
+    client-key: /path/to/key.key
+```
+
+**2. Bearer Tokens:**
+```yaml
+users:
+- name: user
+  user:
+    token: "eyJhbGciOiJSUzI1NiIs..."
+```
+
+**3. Service Accounts:**
+- Automatically created for Pods
+- Token mounted in Pod at `/var/run/secrets/kubernetes.io/serviceaccount/token`
+
+**Authorization Methods:**
+
+**1. RBAC (Role-Based Access Control):**
+```yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: pod-reader
+rules:
+- apiGroups: [""]
+  resources: ["pods"]
+  verbs: ["get", "watch", "list"]
+```
+
+**2. ABAC (Attribute-Based Access Control):**
+- Policy file-based
+- Less common, more complex
+
+**3. Node Authorization:**
+- Allows kubelet to access its own node's resources
+
+**4. Webhook Authorization:**
+- External authorization service
+- Custom authorization logic
+
+**Admission Controllers:**
+
+**Mutating Admission Controllers:**
+- **DefaultStorageClass:** Adds default StorageClass to PVCs
+- **DefaultTolerationSeconds:** Adds default toleration
+- **MutatingAdmissionWebhook:** Custom mutation logic
+
+**Validating Admission Controllers:**
+- **ResourceQuota:** Enforces resource quotas
+- **LimitRange:** Enforces resource limits
+- **PodSecurityPolicy:** Enforces security policies
+- **ValidatingAdmissionWebhook:** Custom validation logic
 
 **Example:**
-```bash
-# All kubectl commands go through API Server
-kubectl get pods
-# → kubectl → API Server → etcd → Response
+```yaml
+# User creates Pod without resource limits
+apiVersion: v1
+kind: Pod
+spec:
+  containers:
+  - name: app
+    image: nginx
 
-kubectl create deployment
-# → kubectl → API Server → Validates → etcd → Scheduler notified
+# LimitRange admission controller adds default limits:
+spec:
+  containers:
+  - name: app
+    image: nginx
+    resources:
+      limits:
+        cpu: 500m
+        memory: 512Mi
+      requests:
+        cpu: 250m
+        memory: 256Mi
+```
+
+**Watch Mechanism:**
+
+API Server provides a **watch API** for real-time updates:
+
+```bash
+# Watch for Pod changes
+kubectl get pods --watch
+
+# Components use watch API:
+# - Scheduler watches for unscheduled Pods
+# - Controllers watch for resource changes
+# - kubelet watches for Pods assigned to its node
+```
+
+**How Watch Works:**
+1. Client sends watch request to API Server
+2. API Server watches etcd for changes
+3. When etcd changes, API Server sends event to client
+4. Client processes event and continues watching
+
+**API Server High Availability:**
+
+**Load Balancing:**
+- Multiple API Server instances
+- Load balancer in front
+- All instances are stateless
+
+**Configuration:**
+```yaml
+# kubeconfig points to load balancer
+clusters:
+- cluster:
+    server: https://api-lb.example.com:6443
 ```
 
 **Important Notes:**
 - ⚠️ **All communication** goes through API Server
 - ⚠️ **Single point of entry** for all operations
-- ⚠️ **Should be highly available** in production
+- ⚠️ **Should be highly available** in production (multiple instances)
 - ✅ **Can be scaled** horizontally for performance
+- ✅ **Stateless** - Can be load balanced
+- ⚠️ **Only component** that talks to etcd directly
+- ✅ **Supports multiple API versions** for backward compatibility
 
 #### 2. etcd
 
 **What it is:**
-**etcd** is a **distributed, consistent key-value store** used as Kubernetes' backing store. It's the **database** of the Kubernetes cluster.
+**etcd** is a **distributed, consistent key-value store** used as Kubernetes' backing store. It's the **database** of the Kubernetes cluster and the **single source of truth** for all cluster state.
 
 **Simple Analogy:**
 Think of etcd as a **filing cabinet**:
@@ -176,38 +411,251 @@ Think of etcd as a **filing cabinet**:
 - Only API Server can access it directly
 - Contains the current state of everything
 - If lost, you lose all records
+- Multiple copies (replicas) for safety
 
 **Responsibilities:**
 - **Stores Cluster Data:** All configurations, state, metadata
 - **Provides Watch Functionality:** Real-time change notifications
-- **Ensures Consistency:** Distributed consensus algorithm
+- **Ensures Consistency:** Distributed consensus algorithm (Raft)
 - **Source of Truth:** Single source of truth for cluster state
+- **Transaction Support:** ACID transactions for consistency
+- **Versioning:** Maintains revision history
 
 **Key Features:**
 - **Highly Available:** Can run in HA mode (3+ nodes)
 - **Persistent Storage:** Data survives restarts
 - **Fast Reads/Writes:** Optimized for performance
 - **Watch API:** Real-time updates for components
-- **Consistent:** Strong consistency guarantees
+- **Consistent:** Strong consistency guarantees (Raft consensus)
+- **Transactional:** ACID-compliant transactions
+- **Versioned:** Maintains revision history
+
+**etcd Architecture:**
+
+```mermaid
+graph TB
+    subgraph "etcd Cluster (3 nodes)"
+        etcd1[etcd Node 1<br/>Leader]
+        etcd2[etcd Node 2<br/>Follower]
+        etcd3[etcd Node 3<br/>Follower]
+    end
+    
+    API[API Server] -->|Write Request| etcd1
+    etcd1 -->|Replicate| etcd2
+    etcd1 -->|Replicate| etcd3
+    etcd2 -->|Acknowledge| etcd1
+    etcd3 -->|Acknowledge| etcd1
+    etcd1 -->|Commit| etcd1
+    etcd1 -->|Response| API
+    
+    API -->|Read Request| etcd1
+    API -->|Read Request| etcd2
+    API -->|Read Request| etcd3
+    
+    style etcd1 fill:#326ce5,color:#fff
+    style etcd2 fill:#4fc3f7,color:#000
+    style etcd3 fill:#4fc3f7,color:#000
+```
+
+**Raft Consensus Algorithm:**
+
+etcd uses **Raft** for distributed consensus:
+
+**Raft Roles:**
+- **Leader:** Handles all client requests, replicates to followers
+- **Follower:** Receives updates from leader, votes in elections
+- **Candidate:** Temporary role during leader election
+
+**How Raft Works:**
+
+**1. Leader Election:**
+- If leader fails, followers become candidates
+- Candidates request votes from other nodes
+- Node with majority votes becomes leader
+- Ensures only one leader at a time
+
+**2. Log Replication:**
+- Leader receives write request
+- Leader appends to its log
+- Leader replicates to all followers
+- Leader waits for majority acknowledgment
+- Leader commits the entry
+- Leader responds to client
+
+**3. Safety:**
+- Only committed entries are applied
+- Majority consensus ensures consistency
+- Network partitions handled gracefully
 
 **What it Stores:**
-- Pod definitions and states
-- Service definitions
-- Deployment configurations
-- Node information
-- Secrets and ConfigMaps
-- All cluster metadata
+
+**Key Structure:**
+```
+/registry/pods/default/my-pod
+/registry/services/default/my-service
+/registry/deployments/default/my-deployment
+/registry/nodes/node-1
+/registry/secrets/default/my-secret
+```
+
+**Storage Categories:**
+
+**1. Workload Objects:**
+- Pods: `/registry/pods/{namespace}/{pod-name}`
+- Deployments: `/registry/deployments/{namespace}/{deployment-name}`
+- Services: `/registry/services/{namespace}/{service-name}`
+- ReplicaSets, StatefulSets, DaemonSets, Jobs, CronJobs
+
+**2. Cluster Objects:**
+- Nodes: `/registry/minions/{node-name}`
+- Namespaces: `/registry/namespaces/{namespace-name}`
+- ResourceQuotas: `/registry/resourcequotas/{namespace}/{quota-name}`
+
+**3. Configuration:**
+- ConfigMaps: `/registry/configmaps/{namespace}/{configmap-name}`
+- Secrets: `/registry/secrets/{namespace}/{secret-name}`
+
+**4. Storage:**
+- PersistentVolumes: `/registry/persistentvolumes/{pv-name}`
+- PersistentVolumeClaims: `/registry/persistentvolumeclaims/{namespace}/{pvc-name}`
+- StorageClasses: `/registry/storageclasses/{sc-name}`
+
+**5. RBAC:**
+- Roles: `/registry/roles/{namespace}/{role-name}`
+- ClusterRoles: `/registry/clusterroles/{role-name}`
+- RoleBindings: `/registry/rolebindings/{namespace}/{binding-name}`
+
+**Watch Mechanism:**
+
+**How Watch Works:**
+1. Client sends watch request to API Server
+2. API Server forwards watch to etcd
+3. etcd maintains watch connection
+4. When key changes, etcd sends event to API Server
+5. API Server forwards event to client
+6. Client processes event and continues watching
+
+**Watch Events:**
+- **PUT:** Object created or updated
+- **DELETE:** Object deleted
+
+**Example:**
+```bash
+# Scheduler watches for unscheduled Pods
+watch /registry/pods/default/* where spec.nodeName == ""
+
+# When Pod created:
+# etcd sends: PUT /registry/pods/default/my-pod
+# Scheduler receives event, schedules Pod
+```
+
+**Data Persistence:**
+
+**Storage Backend:**
+- **Default:** BoltDB (embedded key-value store)
+- **Location:** `/var/lib/etcd/` (configurable)
+- **Format:** Binary format, optimized for performance
+
+**Backup and Restore:**
+
+**Why Backup:**
+- etcd contains **all cluster state**
+- If lost, cluster state is lost
+- Critical for disaster recovery
+
+**Backup Methods:**
+
+**1. etcdctl snapshot:**
+```bash
+# Create snapshot
+etcdctl snapshot save /backup/etcd-snapshot.db \
+  --endpoints=https://etcd-1:2379 \
+  --cacert=/etc/etcd/ca.crt \
+  --cert=/etc/etcd/etcd.crt \
+  --key=/etc/etcd/etcd.key
+
+# Restore from snapshot
+etcdctl snapshot restore /backup/etcd-snapshot.db \
+  --data-dir=/var/lib/etcd-restore
+```
+
+**2. Automated Backup:**
+- Schedule regular backups (cron job)
+- Store backups in external storage
+- Test restore procedures regularly
+
+**High Availability Setup:**
+
+**Recommended Configuration:**
+- **3 nodes minimum** for production
+- **5 nodes** for larger clusters
+- **Odd number** of nodes (3, 5, 7) for quorum
+- **Distributed across zones** for fault tolerance
+
+**Quorum:**
+- **Quorum = (n/2) + 1** where n = number of nodes
+- **3 nodes:** Quorum = 2 (can tolerate 1 failure)
+- **5 nodes:** Quorum = 3 (can tolerate 2 failures)
+
+**Example HA Setup:**
+```
+Zone A: etcd-1 (Leader)
+Zone B: etcd-2 (Follower)
+Zone C: etcd-3 (Follower)
+```
+
+**Performance Considerations:**
+
+**1. Disk I/O:**
+- etcd is **disk-intensive**
+- Use **SSD** for etcd data directory
+- Separate etcd disk from OS disk
+
+**2. Network:**
+- etcd requires **low-latency network**
+- Keep etcd nodes in same region
+- Use dedicated network for etcd traffic
+
+**3. Resource Limits:**
+- **CPU:** 2-4 cores per etcd node
+- **Memory:** 8-16 GB per etcd node
+- **Disk:** Fast SSD, sufficient space
+
+**4. Monitoring:**
+- Monitor etcd performance metrics
+- Alert on high latency
+- Monitor disk space
+
+**Security:**
+
+**1. TLS Encryption:**
+- Enable TLS for etcd communication
+- Use client certificates for authentication
+- Encrypt data in transit
+
+**2. Access Control:**
+- Only API Server should access etcd
+- Use firewall rules to restrict access
+- Enable authentication
+
+**3. Encryption at Rest:**
+- Encrypt etcd data directory
+- Use encryption keys
+- Rotate keys regularly
 
 **Important:**
 - ⚠️ **Backup etcd regularly** - Contains all cluster state
 - ⚠️ **etcd is the source of truth** - If lost, cluster state is lost
 - ⚠️ **Only API Server** talks to etcd directly
-- ✅ **Highly available** setup recommended for production
+- ✅ **Highly available** setup recommended for production (3+ nodes)
+- ⚠️ **Use SSD** for etcd data directory
+- ⚠️ **Monitor performance** - etcd is critical for cluster health
+- ✅ **Encrypt etcd** - Contains sensitive data (Secrets)
 
 #### 3. Scheduler (kube-scheduler)
 
 **What it is:**
-The **Scheduler** is a control plane component that watches for newly created Pods with no assigned node, and **selects a node for them to run on**.
+The **Scheduler** is a control plane component that watches for newly created Pods with no assigned node, and **selects a node for them to run on**. It's responsible for **optimal placement** of Pods across the cluster.
 
 **Simple Analogy:**
 Think of Scheduler as a **job assignment manager**:
@@ -215,6 +663,7 @@ Think of Scheduler as a **job assignment manager**:
 - Evaluates all available workers (Nodes)
 - Chooses the best worker for each task
 - Considers skills, availability, and preferences
+- Ensures fair distribution of work
 
 **Responsibilities:**
 - **Assigns Pods to Nodes:** Decides where Pods run
@@ -223,47 +672,230 @@ Think of Scheduler as a **job assignment manager**:
 - **Considers Affinity Rules:** Pod/node affinity and anti-affinity
 - **Considers Data Locality:** Places Pods near their data
 - **Load Balancing:** Distributes Pods across nodes
+- **Respects Taints and Tolerations:** Only schedules Pods on compatible nodes
+- **Handles Pod Priority:** Prioritizes high-priority Pods
+
+**Scheduler Architecture:**
+
+```mermaid
+graph TB
+    API[API Server/etcd] -->|Watch for Pods| Scheduler[Scheduler]
+    
+    subgraph "Scheduling Pipeline"
+        Filter[Filter Phase<br/>Find Feasible Nodes]
+        Score[Score Phase<br/>Rank Nodes]
+        Bind[Bind Phase<br/>Assign Pod to Node]
+    end
+    
+    Scheduler -->|1. Get Pod| Filter
+    Filter -->|2. Filter Nodes| Node1[Node 1<br/>Feasible]
+    Filter -->|2. Filter Nodes| Node2[Node 2<br/>Feasible]
+    Filter -->|3. Filter Nodes| Node3[Node 3<br/>Not Feasible]
+    
+    Node1 -->|4. Score| Score
+    Node2 -->|4. Score| Score
+    Score -->|5. Select Best| Node2
+    Node2 -->|6. Bind| Bind
+    Bind -->|7. Update Pod| API
+    
+    style Scheduler fill:#326ce5,color:#fff
+    style Filter fill:#4fc3f7,color:#000
+    style Score fill:#81c784,color:#000
+    style Bind fill:#ff9800,color:#fff
+```
 
 **Scheduling Process:**
-The scheduler uses a two-phase approach:
 
-**Phase 1: Filtering**
-- Filters out nodes that can't run the Pod
-- Checks resource availability
-- Checks node constraints
-- Checks taints and tolerations
+The scheduler uses a **two-phase approach**:
 
-**Phase 2: Scoring**
-- Scores remaining nodes
-- Considers resource balance
-- Considers affinity rules
-- Considers data locality
-- Selects highest-scoring node
+**Phase 1: Filtering (Predicates)**
+- **Purpose:** Find nodes that **can** run the Pod
+- **Filters out:** Nodes that can't run the Pod
+- **Checks:**
+  - Resource availability (CPU, memory)
+  - Node constraints (taints, unschedulable)
+  - Pod constraints (node selectors, affinity)
+  - Volume availability
+  - Port conflicts
 
-**Detailed Process:**
+**Phase 2: Scoring (Priorities)**
+- **Purpose:** Rank feasible nodes by preference
+- **Scores:** Each node gets a score (0-100)
+- **Considers:**
+  - Resource balance
+  - Affinity rules
+  - Data locality
+  - Inter-pod affinity
+  - Node preferences
+- **Selects:** Highest-scoring node
+
+**Detailed Scheduling Flow:**
+
 ```
-1. Filter nodes (find nodes that can run the pod)
+1. Watch for Pods
    ↓
-2. Score nodes (rank nodes by preference)
+2. Pod created with spec.nodeName = "" (unscheduled)
    ↓
-3. Select best node (highest score)
+3. Filter Phase:
+   - Get all nodes
+   - Apply predicate functions
+   - Get list of feasible nodes
    ↓
-4. Bind pod to node (assign pod to selected node)
+4. Score Phase:
+   - Score each feasible node
+   - Apply priority functions
+   - Calculate final scores
+   ↓
+5. Select Best Node:
+   - Choose highest-scoring node
+   ↓
+6. Bind Phase:
+   - Update Pod spec.nodeName
+   - Write to etcd via API Server
+   ↓
+7. kubelet on selected node:
+   - Watches for Pods assigned to its node
+   - Creates containers
 ```
 
-**Example:**
+**Filtering Predicates (Examples):**
+
+**1. PodFitsResources:**
+- Checks if node has enough CPU/memory
+- Compares Pod requests with node available resources
+
+**2. PodFitsHost:**
+- Checks if Pod's nodeSelector matches node labels
+
+**3. PodFitsHostPorts:**
+- Checks if required host ports are available
+
+**4. MatchInterPodAffinity:**
+- Checks pod affinity/anti-affinity rules
+
+**5. CheckVolumeBinding:**
+- Checks if volumes can be bound to node
+
+**6. NoDiskConflict:**
+- Checks for volume conflicts
+
+**Scoring Priorities (Examples):**
+
+**1. LeastRequestedPriority:**
+- Favors nodes with fewer requested resources
+- Formula: `(cpu((capacity-sum(requested))×10/capacity) + memory((capacity-sum(requested))×10/capacity))/2`
+- **Goal:** Distribute Pods evenly
+
+**2. BalancedResourceAllocation:**
+- Favors nodes with balanced CPU and memory usage
+- **Goal:** Avoid resource imbalance
+
+**3. ImageLocalityPriority:**
+- Favors nodes that already have required container images
+- **Goal:** Reduce image pull time
+
+**4. NodeAffinityPriority:**
+- Favors nodes matching preferred affinity rules
+- **Goal:** Respect user preferences
+
+**5. InterPodAffinityPriority:**
+- Favors nodes that satisfy pod affinity rules
+- **Goal:** Co-locate related Pods
+
+**6. TaintTolerationPriority:**
+- Favors nodes with matching tolerations
+- **Goal:** Respect taint/toleration rules
+
+**Example Scheduling Scenario:**
+
+**Pod Requirements:**
+```yaml
+apiVersion: v1
+kind: Pod
+spec:
+  containers:
+  - name: app
+    resources:
+      requests:
+        cpu: "2"
+        memory: "4Gi"
+  nodeSelector:
+    disktype: ssd
+  affinity:
+    nodeAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        preference:
+          matchExpressions:
+          - key: zone
+            operator: In
+            values: ["us-west-1a"]
 ```
-New Pod Created (needs 2 CPU, 4GB RAM)
-   ↓
-Scheduler evaluates all nodes
-   ↓
-Filters: Node 1 (has resources), Node 2 (has resources), Node 3 (insufficient)
-   ↓
-Scores: Node 1 (score: 85), Node 2 (score: 92)
-   ↓
-Selects: Node 2 (highest score)
-   ↓
-Assigns Pod to Node 2
+
+**Cluster State:**
+- **Node 1:** 4 CPU, 8GB RAM, HDD, zone: us-west-1b
+- **Node 2:** 8 CPU, 16GB RAM, SSD, zone: us-west-1a
+- **Node 3:** 2 CPU, 4GB RAM, SSD, zone: us-west-1a
+
+**Filtering Phase:**
+1. **PodFitsResources:**
+   - Node 1: ✅ Has 4 CPU, 8GB RAM (sufficient)
+   - Node 2: ✅ Has 8 CPU, 16GB RAM (sufficient)
+   - Node 3: ❌ Only 2 CPU, 4GB RAM (insufficient)
+
+2. **PodFitsHost (nodeSelector):**
+   - Node 1: ❌ HDD (doesn't match "disktype: ssd")
+   - Node 2: ✅ SSD (matches)
+   - Node 3: ✅ SSD (matches, but already filtered)
+
+**Feasible Nodes:** Node 2 only
+
+**Scoring Phase:**
+- **Node 2:**
+  - LeastRequestedPriority: 75 (good resource availability)
+  - NodeAffinityPriority: 100 (matches preferred zone)
+  - **Final Score:** 87.5
+
+**Result:** Pod scheduled to Node 2
+
+**Scheduler Extensibility:**
+
+**Scheduler Framework:**
+- **Plugins:** Extend scheduling logic
+- **Profiles:** Customize scheduler behavior
+- **Multiple Schedulers:** Run multiple schedulers
+
+**Custom Schedulers:**
+- Deploy custom scheduler alongside default
+- Specify scheduler in Pod spec:
+```yaml
+spec:
+  schedulerName: my-custom-scheduler
+```
+
+**Scheduler Performance:**
+
+**Optimizations:**
+- **Parallel Filtering:** Filters nodes in parallel
+- **Caching:** Caches node information
+- **Batch Processing:** Processes multiple Pods efficiently
+
+**Performance Metrics:**
+- **Scheduling Latency:** Time to schedule Pod
+- **Throughput:** Pods scheduled per second
+- **Scheduling Attempts:** Number of scheduling cycles
+
+**Scheduler High Availability:**
+
+**Leader Election:**
+- Multiple scheduler instances
+- Only leader schedules Pods
+- Automatic failover if leader fails
+
+**Configuration:**
+```yaml
+# Scheduler can run multiple instances
+# Leader election ensures only one active scheduler
 ```
 
 **Key Features:**
@@ -271,11 +903,13 @@ Assigns Pod to Node 2
 - **Load Balancing:** Distributes Pods evenly
 - **Extensible:** Can add custom scheduling logic
 - **Efficient:** Fast scheduling decisions
+- **Highly Available:** Leader election for HA
+- **Pluggable:** Framework for custom plugins
 
 #### 4. Controller Manager (kube-controller-manager)
 
 **What it is:**
-The **Controller Manager** runs controller processes that **regulate the state of the cluster**. It ensures the actual state matches the desired state.
+The **Controller Manager** runs controller processes that **regulate the state of the cluster**. It ensures the actual state matches the desired state through **continuous reconciliation**.
 
 **Simple Analogy:**
 Think of Controller Manager as a **quality control supervisor**:
@@ -283,63 +917,297 @@ Think of Controller Manager as a **quality control supervisor**:
 - Checks what actually is (actual state)
 - Takes action when they don't match
 - Continuously ensures everything is correct
+- Multiple supervisors for different areas
 
 **Responsibilities:**
 - **Watches Cluster State:** Monitors desired vs actual state
 - **Takes Corrective Action:** Fixes discrepancies
 - **Manages Controllers:** Runs multiple controllers
 - **Reconciles State:** Continuously ensures consistency
+- **Self-Healing:** Automatically recovers from failures
+
+**Controller Manager Architecture:**
+
+```mermaid
+graph TB
+    etcd[etcd/API Server] -->|Watch Events| CM[Controller Manager]
+    
+    subgraph "Controllers"
+        RC[Replication Controller]
+        DC[Deployment Controller]
+        SC[StatefulSet Controller]
+        DSC[DaemonSet Controller]
+        JC[Job Controller]
+        CJC[CronJob Controller]
+        NC[Node Controller]
+        SVC[Service Controller]
+        EC[Endpoint Controller]
+        NSC[Namespace Controller]
+        RQC[ResourceQuota Controller]
+    end
+    
+    CM --> RC
+    CM --> DC
+    CM --> SC
+    CM --> DSC
+    CM --> JC
+    CM --> CJC
+    CM --> NC
+    CM --> SVC
+    CM --> EC
+    CM --> NSC
+    CM --> RQC
+    
+    RC -->|Reconcile| etcd
+    DC -->|Reconcile| etcd
+    SC -->|Reconcile| etcd
+    
+    style CM fill:#326ce5,color:#fff
+    style RC fill:#4fc3f7,color:#000
+    style DC fill:#4fc3f7,color:#000
+```
 
 **Controllers:**
-The Controller Manager runs multiple controllers:
+
+The Controller Manager runs multiple controllers, each responsible for specific resources:
 
 **Workload Controllers:**
-- **Replication Controller:** Maintains correct number of pod replicas
-- **Deployment Controller:** Manages deployments and rolling updates
-- **StatefulSet Controller:** Manages stateful applications
-- **DaemonSet Controller:** Ensures pods run on all/some nodes
-- **Job Controller:** Manages job completion
-- **CronJob Controller:** Manages scheduled jobs
+
+**1. Replication Controller:**
+- **Purpose:** Maintains correct number of pod replicas
+- **Watches:** ReplicationController objects
+- **Action:** Creates/deletes Pods to match replica count
+- **Status:** Legacy (use Deployment instead)
+
+**2. Deployment Controller:**
+- **Purpose:** Manages deployments and rolling updates
+- **Watches:** Deployment objects
+- **Action:** 
+  - Creates/updates ReplicaSets
+  - Manages rolling updates
+  - Handles rollbacks
+- **Key Feature:** Declarative updates
+
+**3. StatefulSet Controller:**
+- **Purpose:** Manages stateful applications
+- **Watches:** StatefulSet objects
+- **Action:**
+  - Maintains ordered Pod creation/deletion
+  - Manages stable network identities
+  - Handles persistent storage
+- **Key Feature:** Ordered, predictable Pod management
+
+**4. DaemonSet Controller:**
+- **Purpose:** Ensures pods run on all/some nodes
+- **Watches:** DaemonSet objects
+- **Action:**
+  - Creates Pods on all nodes (or selected nodes)
+  - Maintains Pod per node
+  - Handles node additions/removals
+- **Key Feature:** One Pod per node
+
+**5. Job Controller:**
+- **Purpose:** Manages job completion
+- **Watches:** Job objects
+- **Action:**
+  - Creates Pods for job execution
+  - Monitors job completion
+  - Cleans up completed jobs
+- **Key Feature:** One-time task execution
+
+**6. CronJob Controller:**
+- **Purpose:** Manages scheduled jobs
+- **Watches:** CronJob objects
+- **Action:**
+  - Creates Jobs based on schedule
+  - Manages job history
+  - Handles concurrency policies
+- **Key Feature:** Scheduled task execution
 
 **Cluster Controllers:**
-- **Node Controller:** Monitors node health and availability
-- **Service Controller:** Manages cloud load balancers
-- **Endpoint Controller:** Populates endpoint objects for Services
-- **Namespace Controller:** Manages namespace lifecycle
-- **ResourceQuota Controller:** Enforces resource quotas
 
-**How it Works:**
-The Controller Manager follows a **reconciliation loop**:
+**1. Node Controller:**
+- **Purpose:** Monitors node health and availability
+- **Watches:** Node objects
+- **Action:**
+  - Monitors node heartbeats
+  - Marks nodes as unreachable
+  - Evicts Pods from failed nodes
+- **Key Feature:** Node lifecycle management
+
+**2. Service Controller:**
+- **Purpose:** Manages cloud load balancers
+- **Watches:** Service objects (type: LoadBalancer)
+- **Action:**
+  - Creates/updates cloud load balancers
+  - Manages load balancer lifecycle
+  - Handles cloud provider integration
+- **Key Feature:** Cloud integration
+
+**3. Endpoint Controller:**
+- **Purpose:** Populates endpoint objects for Services
+- **Watches:** Service and Pod objects
+- **Action:**
+  - Creates/updates Endpoints objects
+  - Maintains Pod-to-Service mapping
+  - Updates when Pods change
+- **Key Feature:** Service discovery
+
+**4. Namespace Controller:**
+- **Purpose:** Manages namespace lifecycle
+- **Watches:** Namespace objects
+- **Action:**
+  - Handles namespace deletion
+  - Cascades deletion to resources
+  - Finalizes namespace deletion
+- **Key Feature:** Namespace lifecycle
+
+**5. ResourceQuota Controller:**
+- **Purpose:** Enforces resource quotas
+- **Watches:** ResourceQuota and resource objects
+- **Action:**
+  - Tracks resource usage
+  - Enforces quota limits
+  - Rejects requests exceeding quota
+- **Key Feature:** Resource management
+
+**Reconciliation Loop:**
+
+Every controller follows the same **reconciliation pattern**:
+
+```mermaid
+graph LR
+    Watch[Watch Desired State] --> Compare[Compare Desired vs Actual]
+    Compare -->|Match| Watch
+    Compare -->|Different| Action[Take Corrective Action]
+    Action --> Update[Update Actual State]
+    Update --> Watch
+    
+    style Watch fill:#4fc3f7,color:#000
+    style Compare fill:#81c784,color:#000
+    style Action fill:#ff9800,color:#fff
+```
+
+**Detailed Reconciliation Process:**
 
 ```
-1. Watch desired state (from API Server/etcd)
+1. Watch Desired State
+   - Controller watches for changes to desired state
+   - Example: Deployment with replicas: 3
    ↓
-2. Check actual state (from API Server/etcd)
+2. Get Actual State
+   - Controller checks current state
+   - Example: Only 2 Pods running
    ↓
-3. Compare desired vs actual
+3. Compare
+   - Desired: 3 replicas
+   - Actual: 2 replicas
+   - Difference: Need 1 more Pod
    ↓
-4. If different → Take corrective action
+4. Take Action
+   - Create 1 new Pod
+   - Update ReplicaSet
    ↓
-5. Repeat continuously
+5. Verify
+   - Check if action succeeded
+   - Reconcile again if needed
+   ↓
+6. Repeat
+   - Continuously monitor and reconcile
 ```
 
-**Example:**
+**Example: Deployment Controller Reconciliation**
+
+**Scenario:**
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx
+spec:
+  replicas: 3
+  template:
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.20
 ```
-Desired: 3 replicas of nginx
-Actual: 2 replicas running
-   ↓
-Controller detects mismatch
-   ↓
-Creates 1 new Pod
-   ↓
-Actual: 3 replicas running ✅
+
+**Reconciliation Steps:**
+
+**1. Initial State:**
+- Desired: 3 replicas, nginx:1.20
+- Actual: 0 Pods
+- Action: Create ReplicaSet, create 3 Pods
+
+**2. Pod Creation:**
+- Desired: 3 replicas
+- Actual: 3 Pods (creating)
+- Action: Wait for Pods to be ready
+
+**3. Pod Ready:**
+- Desired: 3 replicas
+- Actual: 3 Pods (running)
+- Action: No action needed ✅
+
+**4. Pod Failure:**
+- Desired: 3 replicas
+- Actual: 2 Pods (1 failed)
+- Action: Create 1 new Pod
+
+**5. Image Update:**
+- Desired: 3 replicas, nginx:1.21
+- Actual: 3 Pods, nginx:1.20
+- Action: Rolling update to nginx:1.21
+
+**Controller Communication:**
+
+**How Controllers Watch:**
+- Controllers use **watch API** to monitor resources
+- Watch for changes in etcd via API Server
+- React to events (ADD, UPDATE, DELETE)
+
+**Event-Driven:**
 ```
+Resource Created → etcd → API Server → Controller → Action
+Resource Updated → etcd → API Server → Controller → Action
+Resource Deleted → etcd → API Server → Controller → Action
+```
+
+**Leader Election:**
+
+**High Availability:**
+- Multiple Controller Manager instances
+- Only leader runs controllers
+- Automatic failover if leader fails
+
+**Configuration:**
+```yaml
+# Controller Manager can run multiple instances
+# Leader election ensures only one active controller manager
+```
+
+**Controller Performance:**
+
+**Optimizations:**
+- **Informer Pattern:** Efficient watch mechanism
+- **Work Queues:** Batch processing of events
+- **Rate Limiting:** Prevents API Server overload
+- **Caching:** Caches resource state
+
+**Rate Limiting:**
+- Controllers use rate limiting to avoid overwhelming API Server
+- Configurable per controller
+- Prevents thundering herd
 
 **Key Features:**
 - **Continuous Monitoring:** Always watching cluster state
 - **Automatic Correction:** Fixes issues automatically
 - **Self-Healing:** Maintains desired state
 - **Multiple Controllers:** Manages different aspects
+- **Event-Driven:** Reacts to changes immediately
+- **Highly Available:** Leader election for HA
+- **Efficient:** Uses informer pattern and work queues
 
 #### 5. Cloud Controller Manager (cloud-controller-manager)
 
@@ -372,7 +1240,7 @@ Actual: 3 replicas running ✅
 #### 1. kubelet
 
 **What it is:**
-**kubelet** is an **agent that runs on each node** in the cluster. It's the primary node agent that communicates with the control plane.
+**kubelet** is an **agent that runs on each node** in the cluster. It's the primary node agent that communicates with the control plane and manages the Pod lifecycle on the node.
 
 **Simple Analogy:**
 Think of kubelet as a **foreman on a construction site**:
@@ -380,6 +1248,7 @@ Think of kubelet as a **foreman on a construction site**:
 - Manages workers (containers) on the site
 - Reports progress back to management
 - Ensures work is done correctly
+- Monitors worker health and performance
 
 **Responsibilities:**
 - **Communicates with API Server:** Receives instructions and reports status
@@ -390,6 +1259,40 @@ Think of kubelet as a **foreman on a construction site**:
 - **Mounts Volumes:** Attaches storage volumes to Pods
 - **Downloads Secrets:** Retrieves secrets for Pods
 - **Registers Node:** Registers the node with the cluster
+- **Manages Pod Lifecycle:** Handles Pod creation, updates, deletion
+- **Resource Management:** Enforces resource limits and requests
+
+**kubelet Architecture:**
+
+```mermaid
+graph TB
+    API[API Server] -->|Watch Pods| Kubelet[kubelet]
+    
+    subgraph "kubelet Components"
+        PodWorker[Pod Worker<br/>Manages Pod Lifecycle]
+        ProbeWorker[Probe Worker<br/>Health Checks]
+        VolumeManager[Volume Manager<br/>Mount Volumes]
+        SecretManager[Secret Manager<br/>Fetch Secrets]
+        ImageManager[Image Manager<br/>Pull Images]
+        ContainerRuntime[Container Runtime Interface<br/>CRI]
+    end
+    
+    Kubelet --> PodWorker
+    PodWorker --> ProbeWorker
+    PodWorker --> VolumeManager
+    PodWorker --> SecretManager
+    PodWorker --> ImageManager
+    PodWorker --> ContainerRuntime
+    
+    ContainerRuntime --> Runtime[Container Runtime<br/>containerd/CRI-O]
+    Runtime --> Containers[Containers]
+    
+    Kubelet -->|Status Reports| API
+    
+    style Kubelet fill:#00d4aa,color:#fff
+    style PodWorker fill:#4fc3f7,color:#000
+    style ContainerRuntime fill:#81c784,color:#000
+```
 
 **Key Features:**
 - **Node Registration:** Registers node with API Server
@@ -398,6 +1301,252 @@ Think of kubelet as a **foreman on a construction site**:
 - **Resource Reporting:** Reports CPU, memory, disk usage
 - **Volume Management:** Manages volume mounts
 - **Secret Management:** Handles secret retrieval
+- **Image Management:** Pulls and manages container images
+- **Pod Lifecycle:** Manages complete Pod lifecycle
+
+**Communication Flow:**
+
+**1. Watch Mode (Default):**
+```
+API Server → Watch API → kubelet → Pods assigned to node
+   ↑                                              ↓
+   └────────── Status Reports (Heartbeat) ────────┘
+```
+
+**2. HTTP Mode (Legacy):**
+```
+API Server → HTTP → kubelet → Pods
+   ↑                          ↓
+   └────────── Status Reports ─┘
+```
+
+**Pod Lifecycle Management:**
+
+**1. Pod Creation:**
+```
+API Server: Pod assigned to node (spec.nodeName = this-node)
+   ↓
+kubelet: Watches for Pods assigned to its node
+   ↓
+kubelet: Receives Pod spec
+   ↓
+kubelet: Validates Pod spec
+   ↓
+kubelet: Downloads Secrets and ConfigMaps
+   ↓
+kubelet: Mounts volumes to host
+   ↓
+kubelet: Pulls container images (if needed)
+   ↓
+kubelet: Creates Pod sandbox (pause container)
+   ↓
+kubelet: Creates containers via CRI
+   ↓
+kubelet: Starts containers
+   ↓
+kubelet: Runs startup probes
+   ↓
+kubelet: Runs readiness probes
+   ↓
+kubelet: Reports Pod status to API Server
+```
+
+**2. Pod Updates:**
+```
+API Server: Pod spec updated
+   ↓
+kubelet: Detects change
+   ↓
+kubelet: Updates Pod accordingly
+   ↓
+kubelet: Reports status
+```
+
+**3. Pod Deletion:**
+```
+API Server: Pod marked for deletion
+   ↓
+kubelet: Receives deletion request
+   ↓
+kubelet: Stops containers gracefully
+   ↓
+kubelet: Waits for termination grace period
+   ↓
+kubelet: Kills containers if still running
+   ↓
+kubelet: Unmounts volumes
+   ↓
+kubelet: Removes Pod sandbox
+   ↓
+kubelet: Reports Pod deleted
+```
+
+**Sync Loops:**
+
+kubelet runs multiple sync loops:
+
+**1. Pod Sync Loop:**
+- **Frequency:** Every 10 seconds (configurable)
+- **Purpose:** Sync Pod state with API Server
+- **Actions:** Create, update, delete Pods
+
+**2. Status Sync Loop:**
+- **Frequency:** Every 10 seconds
+- **Purpose:** Report Pod and node status
+- **Actions:** Update status in API Server
+
+**3. Probe Sync Loop:**
+- **Frequency:** Based on probe intervals
+- **Purpose:** Execute health probes
+- **Actions:** Liveness, readiness, startup probes
+
+**4. Volume Sync Loop:**
+- **Frequency:** Every 1 minute
+- **Purpose:** Mount/unmount volumes
+- **Actions:** Attach volumes, mount to host
+
+**Health Checks:**
+
+**1. Liveness Probe:**
+- **Purpose:** Determine if container is alive
+- **Action:** Restart container if probe fails
+- **Types:** HTTP, TCP, Exec
+
+**2. Readiness Probe:**
+- **Purpose:** Determine if container is ready
+- **Action:** Remove from Service endpoints if fails
+- **Types:** HTTP, TCP, Exec
+
+**3. Startup Probe:**
+- **Purpose:** Determine if container has started
+- **Action:** Disables liveness/readiness until passes
+- **Types:** HTTP, TCP, Exec
+
+**Example:**
+```yaml
+apiVersion: v1
+kind: Pod
+spec:
+  containers:
+  - name: app
+    image: nginx
+    livenessProbe:
+      httpGet:
+        path: /health
+        port: 8080
+      initialDelaySeconds: 30
+      periodSeconds: 10
+    readinessProbe:
+      httpGet:
+        path: /ready
+        port: 8080
+      initialDelaySeconds: 5
+      periodSeconds: 5
+```
+
+**Volume Management:**
+
+**Volume Mount Process:**
+1. kubelet receives Pod with volume spec
+2. Volume Manager determines volume type
+3. Volume Plugin provisions/mounts volume to host
+4. kubelet instructs Container Runtime to bind mount
+5. Volume available in container
+
+**Example:**
+```yaml
+volumes:
+- name: data
+  persistentVolumeClaim:
+    claimName: my-pvc
+volumeMounts:
+- name: data
+  mountPath: /data
+```
+
+**Resource Management:**
+
+**Resource Limits:**
+- kubelet enforces CPU and memory limits
+- Uses cgroups to limit resources
+- Kills containers that exceed limits
+
+**Resource Reporting:**
+- Reports node capacity to API Server
+- Reports Pod resource usage
+- Used by Scheduler for placement decisions
+
+**Node Status:**
+
+kubelet reports node status:
+
+**1. Conditions:**
+- **Ready:** Node is ready to accept Pods
+- **MemoryPressure:** Node has memory pressure
+- **DiskPressure:** Node has disk pressure
+- **PIDPressure:** Node has PID pressure
+
+**2. Capacity:**
+- CPU, memory, storage capacity
+- Maximum Pods per node
+
+**3. Allocatable:**
+- Available resources for Pods
+- Capacity minus system reserved
+
+**Example:**
+```bash
+kubectl describe node node-1
+# Conditions:
+#   Ready: True
+#   MemoryPressure: False
+#   DiskPressure: False
+# Capacity:
+#   cpu: 4
+#   memory: 16Gi
+# Allocatable:
+#   cpu: 3.5
+#   memory: 15Gi
+```
+
+**Static Pods:**
+
+kubelet can run **static Pods** from local files:
+
+**Location:** `/etc/kubernetes/manifests/` or `--pod-manifest-path`
+
+**Use Case:** Control plane components (API Server, etcd, Scheduler)
+
+**Example:**
+```yaml
+# /etc/kubernetes/manifests/kube-apiserver.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: kube-apiserver
+spec:
+  containers:
+  - name: kube-apiserver
+    image: k8s.gcr.io/kube-apiserver:v1.28.0
+```
+
+**kubelet Configuration:**
+
+**Key Configuration Options:**
+- `--pod-manifest-path`: Path to static Pod manifests
+- `--kubeconfig`: Path to kubeconfig file
+- `--node-ip`: IP address of the node
+- `--hostname-override`: Override node hostname
+- `--pod-cidr`: CIDR for Pod IPs
+- `--container-runtime-endpoint`: CRI endpoint
+
+**Example:**
+```bash
+kubelet \
+  --kubeconfig=/etc/kubernetes/kubelet.conf \
+  --pod-manifest-path=/etc/kubernetes/manifests \
+  --container-runtime-endpoint=unix:///run/containerd/containerd.sock
+```
 
 **Communication Flow:**
 ```
@@ -407,7 +1556,7 @@ API Server → kubelet → Container Runtime → Containers
 ```
 
 **How it Works:**
-1. **Receives Pod Spec:** Gets Pod specification from API Server
+1. **Receives Pod Spec:** Gets Pod specification from API Server (via watch)
 2. **Creates Pod:** Instructs Container Runtime to create containers
 3. **Monitors Health:** Continuously monitors Pod health
 4. **Reports Status:** Sends status updates to API Server
@@ -437,6 +1586,7 @@ Think of kube-proxy as a **traffic director**:
 - Maintains routing rules
 - Load balances traffic
 - Handles network abstraction
+- Updates routes automatically when Pods change
 
 **Responsibilities:**
 - **Maintains Network Rules:** Sets up iptables/IPVS rules
@@ -444,43 +1594,179 @@ Think of kube-proxy as a **traffic director**:
 - **Load Balances Traffic:** Distributes traffic to Pods
 - **Implements Service Types:** ClusterIP, NodePort, LoadBalancer
 - **Service Discovery:** Enables Pod-to-Pod communication
+- **Session Affinity:** Maintains session stickiness
+- **Health Checking:** Removes unhealthy Pods from load balancing
 
 **Why We Need It:**
 - Pods have dynamic IPs (change when recreated)
 - Services provide stable endpoints
 - kube-proxy routes Service traffic to Pods
 - Handles load balancing across Pods
+- Abstracts Pod IP changes from clients
+
+**kube-proxy Architecture:**
+
+```mermaid
+graph TB
+    Client[Client/Pod] -->|Request| Service[Service<br/>ClusterIP: 10.96.0.1]
+    
+    subgraph "kube-proxy"
+        Watch[Watch API Server<br/>For Service/Endpoint Changes]
+        RuleManager[Rule Manager<br/>Updates iptables/IPVS]
+    end
+    
+    Service -->|Routes via| RuleManager
+    RuleManager -->|iptables/IPVS Rules| Pod1[Pod 1<br/>10.244.1.5]
+    RuleManager -->|iptables/IPVS Rules| Pod2[Pod 2<br/>10.244.1.6]
+    RuleManager -->|iptables/IPVS Rules| Pod3[Pod 3<br/>10.244.1.7]
+    
+    API[API Server] -->|Watch Events| Watch
+    Watch -->|Service/Endpoint Changes| RuleManager
+    
+    style Service fill:#326ce5,color:#fff
+    style RuleManager fill:#4fc3f7,color:#000
+    style Pod1 fill:#81c784,color:#000
+    style Pod2 fill:#81c784,color:#000
+    style Pod3 fill:#81c784,color:#000
+```
 
 **Modes:**
+
 kube-proxy can run in different modes:
 
 **1. iptables Mode (Default):**
-- Uses Linux iptables rules
-- Better performance than userspace
-- No user-space switching
-- Most common in production
-
-**2. IPVS Mode:**
-- Uses IPVS (IP Virtual Server)
-- Better performance for large clusters
-- More load balancing algorithms
-- Recommended for high-traffic clusters
-
-**3. userspace Mode (Legacy):**
-- Proxy runs in userspace
-- Older implementation
-- Less efficient
-- Not recommended for production
 
 **How it Works:**
+- Uses Linux **iptables** rules for routing
+- No proxy process in data path
+- Kernel-level routing (very fast)
+- Most common in production
+
+**Advantages:**
+- ✅ **High Performance:** Kernel-level routing
+- ✅ **No User-Space Overhead:** Direct kernel routing
+- ✅ **Scalable:** Handles many Services efficiently
+- ✅ **Low Latency:** No proxy process delay
+
+**Disadvantages:**
+- ⚠️ **Limited Load Balancing:** Only round-robin
+- ⚠️ **No Session Affinity:** Can't maintain sessions
+- ⚠️ **iptables Complexity:** Many rules for large clusters
+
+**Example iptables Rules:**
+```bash
+# Service ClusterIP rule
+-A KUBE-SERVICES -d 10.96.0.1/32 -p tcp -m tcp --dport 80 -j KUBE-SVC-XXXXX
+
+# Load balancing rules
+-A KUBE-SVC-XXXXX -m statistic --mode random --probability 0.333 -j KUBE-SEP-AAAAA
+-A KUBE-SVC-XXXXX -m statistic --mode random --probability 0.500 -j KUBE-SEP-BBBBB
+-A KUBE-SVC-XXXXX -j KUBE-SEP-CCCCC
+
+# Endpoint rules
+-A KUBE-SEP-AAAAA -p tcp -m tcp -j DNAT --to-destination 10.244.1.5:80
+-A KUBE-SEP-BBBBB -p tcp -m tcp -j DNAT --to-destination 10.244.1.6:80
+-A KUBE-SEP-CCCCC -p tcp -m tcp -j DNAT --to-destination 10.244.1.7:80
 ```
-External Request → Service (ClusterIP: 10.96.0.1)
+
+**2. IPVS Mode:**
+
+**How it Works:**
+- Uses **IPVS** (IP Virtual Server) for routing
+- More advanced load balancing algorithms
+- Better performance for large clusters
+- Recommended for high-traffic clusters
+
+**Advantages:**
+- ✅ **Better Performance:** Optimized for large clusters
+- ✅ **More Algorithms:** Round-robin, least-connection, source-hash, etc.
+- ✅ **Session Affinity:** Supports session persistence
+- ✅ **Lower Latency:** Efficient kernel-level routing
+
+**Disadvantages:**
+- ⚠️ **Requires IPVS Kernel Module:** Must be loaded
+- ⚠️ **More Complex Setup:** Additional configuration
+
+**Load Balancing Algorithms:**
+- **rr (Round Robin):** Distributes requests evenly
+- **lc (Least Connection):** Routes to Pod with fewest connections
+- **sh (Source Hashing):** Routes based on source IP
+- **dh (Destination Hashing):** Routes based on destination IP
+
+**3. userspace Mode (Legacy):**
+
+**How it Works:**
+- Proxy runs in **userspace**
+- Traffic goes through proxy process
+- Older implementation
+- Not recommended for production
+
+**Advantages:**
+- ✅ **Simple:** Easy to understand
+- ✅ **Session Affinity:** Can maintain sessions
+
+**Disadvantages:**
+- ❌ **Low Performance:** User-space overhead
+- ❌ **High Latency:** Proxy process delay
+- ❌ **Not Scalable:** Limited by proxy process
+
+**Service Types Implementation:**
+
+**1. ClusterIP:**
+- **Default Service type**
+- **Internal cluster access only**
+- kube-proxy creates iptables/IPVS rules
+- Routes to Pod IPs
+
+**2. NodePort:**
+- **Exposes Service on node IP**
+- kube-proxy opens port on all nodes
+- Routes external traffic to Service
+- Then routes to Pod IPs
+
+**3. LoadBalancer:**
+- **Cloud provider load balancer**
+- kube-proxy handles internal routing
+- Cloud controller creates external LB
+- Routes external traffic to nodes
+
+**4. ExternalName:**
+- **DNS CNAME**
+- No kube-proxy rules needed
+- Returns external DNS name
+
+**How it Works:**
+
+**Service Creation Flow:**
+```
+1. User creates Service
    ↓
-kube-proxy (iptables rules)
+2. API Server stores Service
    ↓
-Routes to Pod IPs (10.244.1.5, 10.244.1.6, 10.244.1.7)
+3. Endpoint Controller creates Endpoints
    ↓
-Load balanced across Pods
+4. kube-proxy watches for Service/Endpoint changes
+   ↓
+5. kube-proxy updates iptables/IPVS rules
+   ↓
+6. Traffic routes to Pods
+```
+
+**Traffic Flow (iptables Mode):**
+```
+Client Request → Service ClusterIP (10.96.0.1:80)
+   ↓
+iptables PREROUTING chain
+   ↓
+KUBE-SERVICES chain (matches Service)
+   ↓
+KUBE-SVC-XXXXX chain (load balancing)
+   ↓
+KUBE-SEP-AAAAA chain (endpoint)
+   ↓
+DNAT to Pod IP (10.244.1.5:80)
+   ↓
+Pod receives request
 ```
 
 **Example:**
@@ -495,11 +1781,73 @@ kube-proxy creates iptables rules:
 Traffic to Service is load balanced across Pods
 ```
 
+**Session Affinity:**
+
+**How it Works:**
+- Client requests with same source IP
+- Route to same Pod (sticky session)
+- Useful for stateful applications
+
+**Configuration:**
+```yaml
+apiVersion: v1
+kind: Service
+spec:
+  sessionAffinity: ClientIP
+  sessionAffinityConfig:
+    clientIP:
+      timeoutSeconds: 10800
+```
+
+**Health Checking:**
+
+**Endpoint Health:**
+- kube-proxy removes unhealthy Pods from routing
+- Uses Endpoints object (managed by Endpoint Controller)
+- Only healthy Pods receive traffic
+
+**Example:**
+```
+Pod 1: Healthy ✅ → Receives traffic
+Pod 2: Unhealthy ❌ → Removed from routing
+Pod 3: Healthy ✅ → Receives traffic
+```
+
+**Performance Considerations:**
+
+**1. iptables Mode:**
+- **Best for:** Most production clusters
+- **Performance:** Very high
+- **Scalability:** Good (up to thousands of Services)
+
+**2. IPVS Mode:**
+- **Best for:** Large clusters, high traffic
+- **Performance:** Excellent
+- **Scalability:** Excellent (handles 10k+ Services)
+
+**3. userspace Mode:**
+- **Best for:** Development/testing
+- **Performance:** Low
+- **Scalability:** Limited
+
+**Configuration:**
+
+**Enable IPVS Mode:**
+```yaml
+apiVersion: kubeproxy.config.k8s.io/v1alpha1
+kind: KubeProxyConfiguration
+mode: ipvs
+ipvs:
+  scheduler: "rr"  # round-robin
+```
+
 **Key Features:**
 - **Automatic Updates:** Updates rules when Pods change
 - **Load Balancing:** Distributes traffic evenly
 - **Service Types:** Supports all Service types
 - **High Performance:** Efficient routing
+- **Health Aware:** Removes unhealthy Pods
+- **Session Affinity:** Maintains sticky sessions (IPVS mode)
 
 #### 3. Container Runtime
 
