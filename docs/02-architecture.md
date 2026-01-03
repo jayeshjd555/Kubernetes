@@ -689,19 +689,91 @@ graph LR
 
 **7. Migration Path:**
 
-**Option 1: Use containerd (Recommended)**
-- containerd is what Docker uses internally
-- **CRI-compliant** and fully supported
-- **Same container images** work (OCI-compliant)
-- **Better performance** (one less layer)
+**Important Clarification: "Do I Need to Do Anything?"**
+
+This is a **common misconception**. Let's clarify:
+
+**The Situation:**
+- ✅ **Yes, containerd is already installed** if you have Docker Engine
+- ✅ **Docker Engine uses containerd internally**
+- ❌ **BUT kubelet was configured to use dockershim** (not containerd directly)
+- ❌ **dockershim talked to Docker API**, not containerd directly
+
+**What Changed:**
+- **Before 1.24:** kubelet → dockershim → Docker API → dockerd → containerd
+- **After 1.24:** kubelet → CRI → containerd (directly)
+
+**So, What Do Users Need to Do?**
+
+**For Cloud-Managed Clusters (EKS, AKS, GKE):**
+- ✅ **Nothing!** Cloud providers already migrated to containerd
+- ✅ They handled the migration before 1.24
+- ✅ Users were automatically migrated
+- ✅ No action required from users
+
+**For Self-Managed Clusters:**
+- ⚠️ **Yes, you need to reconfigure kubelet**
+- ⚠️ Even though containerd is installed, kubelet needs to be told to use it directly
+- ⚠️ You need to update kubelet configuration
+
+**Why Reconfiguration is Needed:**
+1. **kubelet was configured to use dockershim** (which is now removed)
+2. **kubelet needs to be reconfigured** to use containerd directly via CRI
+3. **Docker Engine can stay or be removed** (your choice)
+4. **containerd must be properly configured** for Kubernetes
+
+**Option 1: Use containerd Directly (Recommended)**
 
 **Migration Steps:**
 ```bash
-# 1. Install containerd
-# 2. Configure containerd
-# 3. Update kubelet to use containerd
+# 1. Ensure containerd is installed and running
+systemctl status containerd
+
+# 2. Configure containerd for Kubernetes (if not already done)
+# Edit /etc/containerd/config.toml
+# Enable CRI plugin
+
+# 3. Update kubelet configuration
+# Edit /var/lib/kubelet/config.yaml or /etc/kubernetes/kubelet.conf
+# Change runtime to containerd:
+# runtimeRequestTimeout: "10m"
+# containerRuntimeEndpoint: "unix:///run/containerd/containerd.sock"
+
+# Or set environment variable:
+# KUBELET_KUBEADM_ARGS="--container-runtime=remote --container-runtime-endpoint=unix:///run/containerd/containerd.sock"
+
 # 4. Restart kubelet
+systemctl restart kubelet
+
+# 5. Verify kubelet is using containerd
+kubectl get nodes -o wide
+# Check runtime version in node info
+
+# 6. (Optional) Stop Docker Engine if not needed elsewhere
+systemctl stop docker
+systemctl disable docker
 ```
+
+**What About Docker Engine?**
+
+**You have two options:**
+
+**Option A: Keep Docker Engine (if you use it elsewhere)**
+- ✅ Docker Engine can stay installed
+- ✅ You can still use `docker` commands for building images
+- ✅ kubelet will use containerd directly (not Docker)
+- ✅ Both can coexist on the same machine
+
+**Option B: Remove Docker Engine (if only used for Kubernetes)**
+- ✅ Remove Docker Engine to save resources
+- ✅ Use `nerdctl` or `ctr` instead of `docker` commands
+- ✅ Cleaner setup with just containerd
+
+**Key Point:**
+- **containerd was already there** (installed with Docker)
+- **But kubelet wasn't using it directly** - it was using dockershim
+- **You need to reconfigure kubelet** to bypass Docker and use containerd directly
+- **Docker Engine itself is optional** - you can keep it or remove it
 
 **Option 2: Use CRI-O**
 - Lightweight, CRI-compliant runtime
@@ -727,15 +799,39 @@ graph LR
 **9. Impact on Users:**
 
 **For Docker Users:**
-- **Container images:** Still work (OCI-compliant)
-- **Dockerfiles:** Still work
-- **Docker commands:** Can still use for building images
-- **Runtime:** Need to switch to containerd or CRI-O
+- **Container images:** Still work (OCI-compliant) ✅
+- **Dockerfiles:** Still work ✅
+- **Docker commands:** Can still use for building images ✅
+- **Runtime:** Need to reconfigure kubelet to use containerd directly ⚠️
 
 **For Kubernetes Clusters:**
-- **Existing clusters:** Need to migrate before upgrading to 1.24+
-- **New clusters:** Use containerd or CRI-O from start
-- **Cloud providers:** Already using containerd (EKS, AKS, GKE)
+
+**Cloud-Managed Clusters (EKS, AKS, GKE):**
+- ✅ **No action required** - Cloud providers handled migration
+- ✅ Already using containerd before 1.24
+- ✅ Users were automatically migrated
+- ✅ Seamless upgrade experience
+
+**Self-Managed Clusters:**
+- ⚠️ **Action required** - Need to reconfigure kubelet
+- ⚠️ Even though containerd is installed (via Docker), kubelet needs reconfiguration
+- ⚠️ Must migrate before upgrading to 1.24+
+- ⚠️ Update kubelet config to use containerd directly
+
+**New Clusters:**
+- ✅ Use containerd or CRI-O from start
+- ✅ No Docker/dockershim involved
+- ✅ Cleaner setup
+
+**Common Misconception Clarified:**
+
+**❌ Wrong Understanding:**
+- "Docker uses containerd, so I don't need to do anything"
+
+**✅ Correct Understanding:**
+- "Docker uses containerd, BUT kubelet was using dockershim (not containerd directly)"
+- "I need to reconfigure kubelet to use containerd directly via CRI"
+- "Docker Engine can stay or be removed - my choice"
 
 **10. Timeline Summary:**
 
