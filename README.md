@@ -83,6 +83,14 @@
     - [Other Service Mesh Solutions](https://github.com/jayeshjd555/Kubernetes/blob/main/docs/14-service-mesh.md#other-service-mesh-solutions)
     - [Service Mesh Comparison](https://github.com/jayeshjd555/Kubernetes/blob/main/docs/14-service-mesh.md#service-mesh-comparison)
 
+15. [CI/CD for Kubernetes](https://github.com/jayeshjd555/Kubernetes/blob/main/docs/15-cicd.md)
+    - [What is CI/CD?](https://github.com/jayeshjd555/Kubernetes/blob/main/docs/15-cicd.md#what-is-cicd)
+    - [GitOps - The Modern Approach](https://github.com/jayeshjd555/Kubernetes/blob/main/docs/15-cicd.md#gitops---the-modern-approach)
+    - [ArgoCD - Declarative GitOps Continuous Delivery](https://github.com/jayeshjd555/Kubernetes/blob/main/docs/15-cicd.md#argocd---declarative-gitops-continuous-delivery)
+    - [Flux - GitOps Continuous Delivery](https://github.com/jayeshjd555/Kubernetes/blob/main/docs/15-cicd.md#flux---gitops-continuous-delivery)
+    - [ArgoCD vs Flux](https://github.com/jayeshjd555/Kubernetes/blob/main/docs/15-cicd.md#argocd-vs-flux)
+    - [Other CI/CD Tools](https://github.com/jayeshjd555/Kubernetes/blob/main/docs/15-cicd.md#other-cicd-tools)
+
 ---
 
 ## Quick Navigation
@@ -115,6 +123,8 @@ Practice what you learn with step-by-step tutorials:
 12. **[Helm Tutorial](https://github.com/jayeshjd555/Kubernetes/blob/main/tutorials/12-helm/README.md)** - Create and Use Helm Charts
 13. **[Kustomize Tutorial](https://github.com/jayeshjd555/Kubernetes/blob/main/tutorials/13-kustomize/README.md)** - Manage Configurations with Kustomize
 14. **[Service Mesh Tutorial](https://github.com/jayeshjd555/Kubernetes/blob/main/tutorials/14-service-mesh/README.md)** - Set Up and Use Istio Service Mesh
+15. **[ArgoCD Tutorial](https://github.com/jayeshjd555/Kubernetes/blob/main/tutorials/15-argocd/README.md)** - Set Up and Use ArgoCD for GitOps
+16. **[Flux Tutorial](https://github.com/jayeshjd555/Kubernetes/blob/main/tutorials/16-flux/README.md)** - Set Up and Use Flux for GitOps
 
 Each tutorial includes:
 - Step-by-step instructions
@@ -143,7 +153,8 @@ Kubernetes/
 │   ├── 11-logging-monitoring.md
 │   ├── 12-crds.md
 │   ├── 13-package-management.md
-│   └── 14-service-mesh.md
+│   ├── 14-service-mesh.md
+│   └── 15-cicd.md
 ├── tutorials/
 │   ├── 01-core-concepts/
 │   │   ├── README.md
@@ -208,6 +219,10 @@ Kubernetes/
 │   └── 13-kustomize/
 │       └── README.md
 │   └── 14-service-mesh/
+│       └── README.md
+│   └── 15-argocd/
+│       └── README.md
+│   └── 16-flux/
 │       └── README.md
 ├── nginx/ (example YAML files)
 ├── mysql/ (example YAML files)
